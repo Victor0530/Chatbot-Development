@@ -1,0 +1,20 @@
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Python Cache
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local database and environment variables
+backend/.env
+backend/local_db.json
+
+# System Files
+.DS_Store
+Thumbs.db
+*.md
