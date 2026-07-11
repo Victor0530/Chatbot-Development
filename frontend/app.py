@@ -112,7 +112,7 @@ if "messages" not in st.session_state:
     st.session_state["messages"] = []
 
 # Title Section
-st.markdown("<h1 class='title-gradient'>CompareNLU</h1>", unsafe_allow_html=True)
+st.markdown("<h1 class='title-gradient'>Online Ticketing Chatbot System</h1>", unsafe_allow_html=True)
 st.markdown("<div class='subtitle'>Side-by-side NLU comparison of Online Ticketing Chatbots (Rasa vs Custom NLP vs Dialogflow)</div>", unsafe_allow_html=True)
 
 # Sidebar
@@ -242,7 +242,8 @@ with col2:
             try:
                 chat_payload = {
                     "message": user_input,
-                    "bot": selected_bot
+                    "bot": selected_bot,
+                    "session_id": st.session_state["session_id"]
                 }
                 res = requests.post(f"{BACKEND_URL}/api/chat", json=chat_payload)
                 if res.status_code == 200:

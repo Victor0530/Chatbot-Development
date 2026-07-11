@@ -72,7 +72,7 @@ def chat_endpoint(payload: ChatRequest):
         
     # Log conversation to database
     conversations_col = get_collection("conversations")
-    session_id = str(uuid.uuid4())[:8] # In a production environment, this would come from headers or frontend
+    session_id = payload.session_id or str(uuid.uuid4())[:8]
     
     conversations_col.insert_one({
         "session_id": session_id,

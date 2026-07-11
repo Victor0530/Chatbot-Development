@@ -5,6 +5,7 @@ from datetime import datetime
 class ChatRequest(BaseModel):
     message: str
     bot: str = Field(..., description="Must be one of: rasa, nlp, dialogflow")
+    session_id: str = "default"
 
 class ChatResponse(BaseModel):
     response: str

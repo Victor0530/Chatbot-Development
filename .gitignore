@@ -17,4 +17,4 @@ backend/local_db.json
 # System Files
 .DS_Store
 Thumbs.db
-*.md
+document.md
