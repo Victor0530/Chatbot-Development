@@ -18,3 +18,4 @@ backend/local_db.json
 .DS_Store
 Thumbs.db
 document.md
+AGENTS.md
