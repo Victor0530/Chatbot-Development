@@ -10,12 +10,27 @@ env/
 *.pyo
 *.pyd
 
-# Local database and environment variables
+# Environment variables & Local Data
+.env
 backend/.env
+frontend/.env
+.streamlit/
 backend/local_db.json
 
-# System Files
+# IDE & Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS System Files
 .DS_Store
 Thumbs.db
+
+# Documentation
 document.md
 AGENTS.md
+
+# Rasa-specific
+rasa-chatbot/models/
+rasa-chatbot/.rasa/

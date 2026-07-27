@@ -1,0 +1,92 @@
+version: "3.1"
+
+nlu:
+  - intent: greet
+    examples: |
+      - hi
+      - hello
+      - hey
+      - good morning
+      - good evening
+
+  - intent: goodbye
+    examples: |
+      - bye
+      - goodbye
+      - see you later
+
+  - intent: start_booking
+    examples: |
+      - i want to buy tickets
+      - i want to book a ticket
+      - i need to buy tickets
+      - start booking
+      - book tickets
+
+  - intent: query_events
+    examples: |
+      - what shows are playing?
+      - are there any concerts?
+      - which events are available
+      - what do u recommend
+      - recommend me something
+      - show me the concerts
+
+  - intent: inform_ticket_query
+    examples: |
+      - i want to buy a ticket
+      - check prices for tickets
+      - i need event information
+
+  - intent: inform
+    examples: |
+      - [Concert A](event_name)
+      - [Concert B](event_name)
+      - [concert a](event_name)
+      - [concert b](event_name)
+      - [Pop Night](event_name)
+      - [Rock Fest](event_name)
+      - [Broadway Musical](event_name)
+      - [Championship Basketball](event_name)
+      - [Standup Comedy Gala](event_name)
+      - [pop night](event_name)
+      - [rock fest](event_name)
+      - [broadway](event_name)
+      - [basketball](event_name)
+      - [comedy](event_name)
+      - [1](ticket_quantity)
+      - [2](ticket_quantity)
+      - [3](ticket_quantity)
+      - [4](ticket_quantity)
+      - [5](ticket_quantity)
+      - [one](ticket_quantity)
+      - [two](ticket_quantity)
+      - [three](ticket_quantity)
+      - [four](ticket_quantity)
+      - [five](ticket_quantity)
+      - I want [Concert A](event_name)
+      - I want [Concert B](event_name)
+      - I want [2](ticket_quantity) tickets
+      - 1
+      - 2
+      - 3
+      - 4
+      - 5
+      - one
+      - two
+      - three
+      - four
+      - five
+
+  - lookup: event_name
+    examples: |
+      - Concert A - Pop Night
+      - Concert B - Rock Fest
+      - Broadway Musical
+      - Championship Basketball
+      - Standup Comedy Gala
+      - Pop Night
+      - Rock Fest
+      - broadway
+      - basketball
+      - comedy

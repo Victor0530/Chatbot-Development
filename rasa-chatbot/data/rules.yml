@@ -1,0 +1,43 @@
+version: "3.1"
+
+rules:
+  - rule: Activate ticket booking form
+    steps:
+      - intent: start_booking
+      - action: action_start_booking
+      - action: ticket_booking_form
+      - active_loop: ticket_booking_form
+
+  - rule: Submit ticket booking form
+    condition:
+      - active_loop: ticket_booking_form
+    steps:
+      - action: ticket_booking_form
+      - active_loop: null
+      - slot_was_set:
+          - requested_slot: null
+      - action: action_submit_booking
+
+  - rule: Handle event query during booking
+    condition:
+      - active_loop: ticket_booking_form
+    steps:
+      - intent: query_events
+      - action: action_search_tickets
+      - action: ticket_booking_form
+      - active_loop: ticket_booking_form
+
+  - rule: Query events
+    steps:
+      - intent: query_events
+      - action: action_search_tickets
+
+  - rule: Handle inform ticket query
+    steps:
+      - intent: inform_ticket_query
+      - action: action_search_tickets
+
+  - rule: Say goodbye anytime the user says goodbye
+    steps:
+      - intent: goodbye
+      - action: utter_goodbye

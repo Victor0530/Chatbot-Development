@@ -1,0 +1,65 @@
+version: "3.1"
+
+intents:
+  - greet
+  - goodbye
+  - start_booking
+  - inform
+  - inform_ticket_query
+  - query_events
+
+entities:
+  - event_name
+  - ticket_quantity
+  - timeframe
+  - category
+
+slots:
+  event_name:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: event_name
+      - type: from_text
+        conditions:
+          - active_loop: ticket_booking_form
+            requested_slot: event_name
+  ticket_quantity:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: ticket_quantity
+      - type: from_text
+        conditions:
+          - active_loop: ticket_booking_form
+            requested_slot: ticket_quantity
+
+forms:
+  ticket_booking_form:
+    required_slots:
+      - event_name
+      - ticket_quantity
+
+actions:
+  - action_start_booking
+  - action_search_tickets
+  - action_submit_booking
+  - validate_ticket_booking_form
+
+responses:
+  utter_greet:
+    - text: "Hello! I am your ticketing assistant. How can I help you book tickets?"
+  utter_goodbye:
+    - text: "Goodbye! Have a great day."
+  utter_ask_event_name:
+    - text: "Which event are you interested in?"
+  utter_ask_ticket_quantity:
+    - text: "How many tickets would you like to book?"
+  utter_submit:
+    - text: "Perfect! I have booked {ticket_quantity} tickets for {event_name}. You can view your tickets in your dashboard."
+
+session_config:
+  session_expiration_time: 60
+  carry_over_slots_to_new_session: true

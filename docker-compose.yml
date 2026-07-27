@@ -1,24 +1,18 @@
 version: '3.8'
 services:
-  mongodb:
-    image: mongo:latest
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-
   backend:
     build: ./backend
+    volumes:
+      - ./backend:/app
     ports:
       - "8000:8000"
-    depends_on:
-      - mongodb
-    environment:
-      - MONGO_URI=mongodb://mongodb:27017/chatbot_ticketing
-      - DB_NAME=chatbot_ticketing
+    env_file:
+      - ./backend/.env
 
   frontend:
     build: ./frontend
+    volumes:
+      - ./frontend:/app
     ports:
       - "8501:8501"
     depends_on:
@@ -32,7 +26,13 @@ services:
       - "5005:5005"
     volumes:
       - ./rasa-chatbot:/app
-    command: rasa run --enable-api --cors "*"
+    command: rasa run --enable-api --cors "*" --endpoints endpoints.yml
 
-volumes:
-  mongo-data:
+  actions:
+    build: ./rasa-chatbot
+    volumes:
+      - ./rasa-chatbot/actions:/app/actions
+    env_file:
+      - ./backend/.env
+    command: rasa run actions
+

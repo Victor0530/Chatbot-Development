@@ -1,0 +1,26 @@
+version: "3.1"
+
+stories:
+  - story: happy path booking
+    steps:
+      - intent: greet
+      - action: utter_greet
+      - intent: start_booking
+      - action: action_start_booking
+      - action: ticket_booking_form
+      - active_loop: ticket_booking_form
+      - active_loop: null
+      - action: action_submit_booking
+
+  - story: interruption example
+    steps:
+      - intent: start_booking
+      - action: action_start_booking
+      - action: ticket_booking_form
+      - active_loop: ticket_booking_form
+      - intent: query_events
+      - action: action_search_tickets
+      - action: ticket_booking_form
+      - active_loop: ticket_booking_form
+      - active_loop: null
+      - action: action_submit_booking

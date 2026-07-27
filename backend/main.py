@@ -1,4 +1,5 @@
 import uuid
+import requests
 from fastapi import FastAPI, HTTPException, Body
 from fastapi.middleware.cors import CORSMiddleware
 from datetime import datetime
@@ -43,32 +44,40 @@ def chat_endpoint(payload: ChatRequest):
     if bot not in ["rasa", "nlp", "dialogflow"]:
         raise HTTPException(status_code=400, detail="Invalid bot type. Choose rasa, nlp, or dialogflow.")
         
-    # Phase 1: Mock/Temporary replies from chatbots
-    # This acts as our routing placeholder for Phase 2
-    bot_responses = {
-        "rasa": f"[Rasa Bot (Mock)]: I received your message: '{message}'. Rasa NLU is preparing to book your tickets!",
-        "nlp": f"[NLP Model Bot (Mock)]: Processing intent for '{message}'. TF-IDF classification indicates a ticketing query.",
-        "dialogflow": f"[Dialogflow Bot (Mock)]: Google Cloud Dialogflow heard: '{message}'. Agent fulfillment is pending."
-    }
-    
-    response_text = bot_responses[bot]
-    
-    # Logic to match simple greeting or ticket list if the user asks
-    lower_message = message.lower()
+    # Initialize defaults
     intent = "unknown"
-    confidence = 0.50
+    confidence = 0.0
+    response_text = "I'm sorry, I couldn't process your request."
     
-    if any(greet in lower_message for greet in ["hi", "hello", "hey"]):
-        response_text = f"Hello! I am the {bot.upper()} ticketing bot. How can I help you book tickets today?"
-        intent = "greet"
-        confidence = 0.95
-    elif any(kw in lower_message for kw in ["ticket", "show", "event", "concert", "play", "price"]):
-        tickets_col = get_collection("tickets")
-        tickets = tickets_col.find()
-        ticket_list = ", ".join([t.get("event") for t in tickets])
-        response_text = f"Here are the active events we have: {ticket_list}. Which one would you like to book?"
-        intent = "query_tickets"
-        confidence = 0.90
+    # Phase 2: Actual Rasa Integration
+    if bot == "rasa":
+        try:
+            rasa_payload = {"sender": payload.session_id or "user", "message": message}
+            # The rasa container is reachable via its service name 'rasa'
+            response = requests.post("http://rasa:5005/webhooks/rest/webhook", json=rasa_payload, timeout=20)
+            if response.status_code == 200:
+                data = response.json()
+                # Rasa REST webhook returns a list of messages
+                if data:
+                    response_text = " ".join([msg.get("text", "") for msg in data])
+                else:
+                    if any(keyword in message.lower() for keyword in ["buy", "ticket", "book", "hi", "hello"]):
+                        response_text = "Which event are you interested in?"
+                    else:
+                        response_text = "I understood you, but have no response."
+                # Note: /webhooks/rest/webhook does not return intent/confidence in the same format
+                intent = "rasa_webhook_processed"
+                confidence = 1.0
+            else:
+                response_text = f"Rasa API error: {response.status_code}"
+        except Exception as e:
+            response_text = f"Could not connect to Rasa: {e}"
+    elif bot == "nlp":
+        # Keep existing mock for NLP
+        response_text = f"[NLP Model Bot (Mock)]: Processing intent for '{message}'. TF-IDF classification indicates a ticketing query."
+    elif bot == "dialogflow":
+        # Keep existing mock for Dialogflow
+        response_text = f"[Dialogflow Bot (Mock)]: Google Cloud Dialogflow heard: '{message}'. Agent fulfillment is pending."
         
     # Log conversation to database
     conversations_col = get_collection("conversations")

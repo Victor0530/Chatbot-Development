@@ -3,7 +3,8 @@ import requests
 import uuid
 
 # Base API URL
-BACKEND_URL = "http://localhost:8000"
+# Inside Docker, the frontend container refers to the backend container by its service name.
+BACKEND_URL = "http://backend:8000"
 
 st.set_page_config(
     page_title="CompareNLU — Ticket Chatbots Dashboard",
@@ -123,7 +124,7 @@ with st.sidebar:
     # Check backend status
     backend_online = False
     try:
-        response = requests.get(f"{BACKEND_URL}/api/tickets", timeout=1)
+        response = requests.get(f"{BACKEND_URL}/api/tickets", timeout=5)
         if response.status_code == 200:
             backend_online = True
     except Exception:

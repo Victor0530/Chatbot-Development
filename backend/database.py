@@ -63,20 +63,29 @@ def get_collection(name: str):
             with open(LOCAL_DB_FILE, "w") as f:
                 json.dump(data, f, indent=4)
 
+        def _match(self, item, query):
+            if not query:
+                return True
+            for k, v in query.items():
+                item_val = item.get(k)
+                if isinstance(v, dict) and "$regex" in v:
+                    import re
+                    pattern = v["$regex"]
+                    flags = re.IGNORECASE if v.get("$options") == "i" else 0
+                    if not item_val or not re.search(pattern, str(item_val), flags):
+                        return False
+                elif item_val != v:
+                    return False
+            return True
+
         def find(self, query=None):
             data = self._read_data()
             items = data.get(self.name, [])
             if not query:
                 return items
-            # Simple query filter
             filtered = []
             for item in items:
-                match = True
-                for k, v in query.items():
-                    if item.get(k) != v:
-                        match = False
-                        break
-                if match:
+                if self._match(item, query):
                     filtered.append(item)
             return filtered
 
@@ -93,22 +102,20 @@ def get_collection(name: str):
             return doc
 
         def update_one(self, query, update):
-            # Simple update support
             data = self._read_data()
             items = data.get(self.name, [])
             updated = False
             for item in items:
-                match = True
-                for k, v in query.items():
-                    if item.get(k) != v:
-                        match = False
-                        break
-                if match:
+                if self._match(item, query):
                     if "$set" in update:
                         for uk, uv in update["$set"].items():
                             item[uk] = uv
                         updated = True
-                        break
+                    if "$inc" in update:
+                        for uk, uv in update["$inc"].items():
+                            item[uk] = item.get(uk, 0) + uv
+                        updated = True
+                    break
             if updated:
                 self._write_data(data)
 
@@ -128,12 +135,7 @@ def get_collection(name: str):
                 items = data.get(self.name, [])
                 new_items = []
                 for item in items:
-                    match = True
-                    for k, v in query.items():
-                        if item.get(k) != v:
-                            match = False
-                            break
-                    if not match:
+                    if not self._match(item, query):
                         new_items.append(item)
                 data[self.name] = new_items
             self._write_data(data)

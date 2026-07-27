@@ -6,7 +6,7 @@ Build an **Online Ticketing System** chatbot using 3 different approaches, conne
 
 | Member | Approach | Tool / Technique |
 |--------|----------|------------------|
-| **Member 1** (You) | Platform-based | **Rasa** (open-source NLU) |
+| **Member 1** (You) | Platform-based | **Rasa** (open-source NLU + Custom Actions + Forms) |
 | **Member 2** | ML-based | Custom **NLP model** (TF-IDF + classifier / LSTM) |
 | **Member 3** | Platform-based | **Google Dialogflow** (cloud NLU) |
 
@@ -19,8 +19,8 @@ Build an **Online Ticketing System** chatbot using 3 different approaches, conne
 | Shared UI | **Streamlit** | Python-native frontend, shared across all members |
 | Unified API | **FastAPI** | Routes requests to the correct chatbot, handles DB |
 | Cloud Database | **MongoDB Atlas** (Free Tier) | Shared persistent storage for tickets + conversations |
-| Chatbot 1 | **Rasa** | Exposes REST API (`POST /webhooks/chat`) |
-| Chatbot 2 | **NLP ML Model** | Custom model served via FastAPI or Flask |
+| Chatbot 1 | **Rasa** | Rasa NLU + Core + Action Server |
+| Chatbot 2 | **NLP ML Model** | Custom model served via FastAPI |
 | Chatbot 3 | **Dialogflow** | Google cloud chatbot via Dialogflow REST API |
 
 ---
@@ -48,6 +48,8 @@ Build an **Online Ticketing System** chatbot using 3 different approaches, conne
      +--- Member 2: NLP ML Model    (local FastAPI route)
      |
      +--- Member 1: Rasa            (http://localhost:5005/webhooks/chat)
+          |
+          +--- Rasa Action Server (for custom DB logic & booking)
 ```
 
 ### Data Flow
@@ -58,207 +60,26 @@ Build an **Online Ticketing System** chatbot using 3 different approaches, conne
 
 ---
 
-## 4. Database Schema (MongoDB Atlas)
+## 4. Unified Team Contract: Standardized Intents & Entities
 
-### `tickets`
-```json
-{
-  "_id": ObjectId,
-  "event": "Concert A",
-  "date": "2026-05-20",
-  "venue": "Stadium XYZ",
-  "price": 150.00,
-  "available": 120,
-  "category": "music"
-}
-```
+To ensure seamless side-by-side comparison across all 3 chatbot approaches (Rasa, Custom NLP Model, and Dialogflow), all teammates must adhere to this standardized set of **Intents** and **Entities**.
 
-### `conversations`
-```json
-{
-  "_id": ObjectId,
-  "session_id": "abc123",
-  "bot_type": "rasa",
-  "messages": [
-    { "role": "user", "text": "Hi", "timestamp": "..." },
-    { "role": "bot", "text": "Hello! How can I help?", "timestamp": "..." }
-  ],
-  "intents": ["greet"],
-  "created_at": "..."
-}
-```
+### Standardized Intents
+| Intent Name | Description / User Goal | Example Utterances |
+| :--- | :--- | :--- |
+| `greet` | User greets the bot | "Hi", "Hello", "Hey there" |
+| `goodbye` | User ends conversation | "Bye", "See you", "Goodbye" |
+| `start_booking` | User initiates ticket purchase | "I want to buy tickets", "Book a show", "Get tickets" |
+| `inform` (or `inform_slot`) | User provides requested details (event name, quantity) | "Concert A", "3 tickets", "Pop Night" |
+| `query_events` | User asks about available events or schedule | "What events do you have?", "Any concerts this weekend?" |
+| `affirm` / `deny` | User confirms or cancels | "Yes", "Sure", "No", "Cancel" |
 
-### `feedback`
-```json
-{
-  "_id": ObjectId,
-  "session_id": "abc123",
-  "bot_type": "rasa",
-  "rating": 4,
-  "comment": "Fast and accurate",
-  "created_at": "..."
-}
-```
+### Standardized Entities
+| Entity Name | Description | Expected Values / Types |
+| :--- | :--- | :--- |
+| `event_name` | Name or shorthand of the event | `Concert A`, `Concert B`, `Rock Fest`, `Pop Night` |
+| `ticket_quantity` | Number of tickets requested | Integer (`1`, `3`) or word number (`one`, `three`, `couple`) |
+| `timeframe` | Date or time period constraint | `tomorrow`, `this month`, `May` |
+| `category` | Event category filter | `music`, `sports`, `theater` |
 
 ---
-
-## 5. Folder Structure
-
-```
-/chatbot-ticketing-system
-├── frontend/                  # Shared Streamlit UI
-│   └── app.py
-├── backend/                   # FastAPI unified backend
-│   ├── main.py                # Entry point, routes
-│   ├── database.py            # MongoDB connection
-│   ├── models.py              # Pydantic models
-│   ├── requirements.txt
-│   └── .env                   # MongoDB URI + keys
-├── rasa-chatbot/              # Member 1 — Rasa
-│   ├── actions/
-│   ├── data/
-│   │   ├── nlu.yml
-│   │   ├── stories.yml
-│   │   └── rules.yml
-│   ├── config.yml
-│   ├── domain.yml
-│   ├── endpoints.yml
-│   └── credentials.yml
-├── nlp-chatbot/               # Member 2 — NLP ML-based
-│   ├── train.py               # Train intent classifier
-│   ├── model.pkl               # Trained model
-│   ├── intents.json           # Training data
-│   ├── server.py              # Flask/FastAPI wrapper
-│   └── preprocess.py          # Tokenization, cleaning
-├── dialogflow-chatbot/        # Member 3 — Dialogflow
-│   ├── agent.zip              # Exported Dialogflow agent
-│   ├── server.py              # FastAPI ↔ Dialogflow bridge
-│   └── service-account.json   # GCP service account key
-├── requirements.txt           # Shared Python deps
-├── plan.md                    # This file
-└── README.md                  # Setup instructions
-```
-
----
-
-## 6. API Contract
-
-All chatbots must expose this interface for the FastAPI backend to call:
-
-### Request (FastAPI → Chatbot)
-```
-POST /chat
-Content-Type: application/json
-
-{
-  "message": "I want to buy 2 tickets to Concert A",
-  "session_id": "user-session-001"
-}
-```
-
-### Response (Chatbot → FastAPI)
-```json
-{
-  "response": "Sure! 2 tickets to Concert A — that'll be $300. Confirm?",
-  "intent": "book_tickets",
-  "confidence": 0.92
-}
-```
-
-### FastAPI Unified Endpoint (Streamlit → FastAPI)
-```
-POST /api/chat
-Content-Type: application/json
-
-{
-  "message": "I want to buy 2 tickets to Concert A",
-  "bot": "rasa"  // or "nlp" or "dialogflow"
-}
-```
-
-Response: same format as above.
-
----
-
-## 7. Timeline (4 Weeks)
-
-### Phase 1 — Foundation (Week 1)
-| Day | Task | Owner |
-|-----|------|-------|
-| 1 | Set up MongoDB Atlas cluster (free tier), share connection string | All |
-| 1 | Create shared repo, scaffold folder structure | All |
-| 2 | Build FastAPI backend: MongoDB connection + `/api/chat` route | All (pair) |
-| 3 | Build Streamlit UI: chat interface + bot selector dropdown | All (pair) |
-| 4 | Test UI ↔ Backend connection end-to-end | All |
-| 5 | Seed MongoDB with sample ticket data | All |
-
-### Phase 2 — Chatbot Development (Week 2–3)
-| Week | Task | Owner |
-|------|------|-------|
-| W2 | Build Rasa chatbot: intents, stories, domain, actions, test locally | Member 1 (You) |
-| W2 | Build NLP chatbot: collect intents data, train classifier, wrap in server | Member 2 |
-| W2 | Build Dialogflow chatbot: create agent, configure intents/entities, export | Member 3 |
-| W3 | Integrate Rasa with FastAPI (connect to `/api/chat`) | Member 1 (You) |
-| W3 | Integrate NLP model with FastAPI | Member 2 |
-| W3 | Integrate Dialogflow with FastAPI (service account auth) | Member 3 |
-
-### Phase 3 — Integration (Week 3–4)
-| Day | Task | Owner |
-|-----|------|-------|
-| 1 | Wire all 3 chatbots to Streamlit bot selector dropdown | All |
-| 2 | Log every conversation to MongoDB `conversations` collection | All |
-| 3 | Add feedback form to Streamlit UI (rating 1–5 + comment) | All |
-| 4 | End-to-end testing across all 3 chatbots | All |
-
-### Phase 4 — Evaluation & Documentation (Week 4)
-| Day | Task | Owner |
-|-----|------|-------|
-| 1 | Compare intent recognition accuracy (F1, Precision, Recall) | All |
-| 2 | Compare response quality (BLEU/ROUGE if applicable) | All |
-| 3 | Analyze user feedback from MongoDB | All |
-| 4 | Compile report / documentation | All |
-
----
-
-## 8. Setup Instructions (for teammates)
-
-```bash
-# 1. Clone the repo
-git clone <repo-url>
-cd chatbot-ticketing-system
-
-# 2. Install shared dependencies
-pip install -r requirements.txt
-
-# 3. Backend setup
-cd backend
-cp .env.example .env   # Add MongoDB Atlas URI
-uvicorn main:app --reload --port 8000
-
-# 4. Frontend (separate terminal)
-cd frontend
-streamlit run app.py
-
-# 5. Each chatbot has its own setup in its respective folder
-```
-
-### Shared `requirements.txt`
-```
-streamlit
-fastapi
-uvicorn
-pymongo[srv]
-python-dotenv
-requests
-pandas
-```
-
----
-
-## 9. Success Criteria
-
-- [ ] Streamlit UI can switch between 3 chatbots and display responses
-- [ ] All conversations are logged to MongoDB Atlas
-- [ ] Each chatbot can answer ticket-related queries (availability, booking, FAQ)
-- [ ] Feedback is collected and stored
-- [ ] Evaluation metrics are computed and compared
