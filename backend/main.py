@@ -7,6 +7,7 @@ from typing import List
 
 from models import ChatRequest, ChatResponse, FeedbackRequest, Ticket
 from database import get_collection
+from dialogflow.dialogflow_bot import handle_dialogflow_message
 
 app = FastAPI(title="Unified Chatbot Ticketing API", version="1.0")
 
@@ -76,8 +77,7 @@ def chat_endpoint(payload: ChatRequest):
         # Keep existing mock for NLP
         response_text = f"[NLP Model Bot (Mock)]: Processing intent for '{message}'. TF-IDF classification indicates a ticketing query."
     elif bot == "dialogflow":
-        # Keep existing mock for Dialogflow
-        response_text = f"[Dialogflow Bot (Mock)]: Google Cloud Dialogflow heard: '{message}'. Agent fulfillment is pending."
+        response_text, intent, confidence = handle_dialogflow_message(payload.session_id or "default", message)
         
     # Log conversation to database
     conversations_col = get_collection("conversations")

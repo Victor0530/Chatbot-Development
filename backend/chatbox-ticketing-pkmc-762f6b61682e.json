@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "chatbox-ticketing-pkmc",
+  "private_key_id": "762f6b61682e350422e8bcb3edc8c96a93cfb019",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDXTPbpeZ4wve+m\ntw+PSJBtvpSgx5wcK4N8akjoC/O1zAVfiabn2NGIUdew/CT7JzyfMjOEchQQ5KFB\ntQf5YykyG4tkGhiBuPsnxxDnLiSBfNBrI8v+oCyU9ABsT844lHAKjOOmwu7cZ4iN\nC0opi8THYfP4T5tuNkPC/xhEyhUsuBKP2ziwwU602qps1g13MMW5hEV0pT8RcsNL\n48sflOrem3Ryok5d/9tRbQL7f4aFb8ZekAUuZwBYl1agB1xnk/kbyAnNBKBDuciA\n2vKTN5ZYypgalCzflGldvWKui5/CjLK1t0Qj5+4c8i3xcn6muz/8lyjQhwBp2bjU\n1CoDXJSrAgMBAAECggEAXqd3HDE8Q2iVrmFn5VH9MUpq1H69WsMkpPOjRuVOSXw/\nVn/RkbeIcxqsLaLE7WgUJlcvQAjZWo3xeU5KCbG3QFDMyP8SDCITxSqm+0QVh5ok\nlR3hRvoLb5cQgo3Zd5WG5pSHV173HY4lAgFXIwnQQuoFFQOGrX8M7nMxK7j+czBR\nDjU9IJFZWZ9sJxV93ih7xwufYuzFeDnBl20S83cpZgUFudc4vJoxYRDA9OWBuiIX\nszArnSaLJYME0WooXiKOXHJ+naDD0Mho+Hhlc8QAi0utbBqkmFDXjzxKDVpaS6I9\nkw8lOJhWrPr9vrmmc/nV6BMVO8xjCMLaBglmOXT+kQKBgQD7KawywPsg78i3GEFR\nXuzN/9uwRzsgMaD3RynYEiWZphKthoAEaHhIbkybTTeMJT2qsKLlFqHu14nw0qO7\nPwIDACY1LUkIxukUI09v95Lo/J1ovfkJkTpofwVsALG6WRYnGtD0vMuHsjs/xpEE\n3vKCKjI0Gswz4Db/dQS4NAI+OwKBgQDbcnpbPTUYh8dbs+upcZsXJr2vbqfqvKjQ\n/O7GxyvGQwKsTday5JT+qjCrOlhbQuhnYJwgcOKhdFhji8zSRJS2GH88cuwT73Ks\nCEWkt1e/cWITXxNRzULxgvNttetrqRWCkh6JXvwr8Q4GHFmoUtLOCa+eWA7jbtyS\ncOfjsNJsUQKBgQCCSxYHplEgvwOy6CRKYCIco5SGGA22H8jPPt2YN6HF2X9rAZE7\nuC5d9MpM7nvYeiFJgSSgD2OmEa5/feZuZrtWbydjAsEWiomzZrX48cgGkbXe9l5Q\n9kQEnZBkfN+2Oizh0GmB7Mbw+CcAaLQmgLnxiI5OtXAloTUmxL/UBzb6rQKBgBt/\nWL2eCc0tFlnzTZBJ3/kirZoR75CGW1D0oKbfxihttSQKDOEVq2XNxZNvGCs3Uw/B\nF08pVfyNK5Ytqliep1O59heI/vPwiRntX2yoXKJsfrGWtEEHy1+f3QjeRsWSxlM6\nJAFqmYaYCf3SB5oD5s5SgGMC/bqZ5aGj7CqnuXZBAoGBAJTXKmiJ6ilu9QkWULny\nsKE7PPJik+mMEQWhIHYXT8V+IPOVAfbuQ3KwKVcs8FF4J6n+DibO0zLyb5n5jlWa\nftJNxY78fknjhbRW5vOiqAoQI3OW3IU9DtyHE8SG+k0b3Lcu+eHHSbzHaqemcaZ/\n2Yj0zEJMePZ7c8v8P1njrmsF\n-----END PRIVATE KEY-----\n",
+  "client_email": "dialogflow-client@chatbox-ticketing-pkmc.iam.gserviceaccount.com",
+  "client_id": "106494422791810040843",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dialogflow-client%40chatbox-ticketing-pkmc.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}

@@ -16,6 +16,8 @@ backend/.env
 frontend/.env
 .streamlit/
 backend/local_db.json
+dialogflow-*.json
+backend/secret/
 
 # IDE & Editor Files
 .vscode/
