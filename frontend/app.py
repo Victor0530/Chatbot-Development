@@ -1,10 +1,12 @@
+import os
 import streamlit as st
 import requests
 import uuid
 
 # Base API URL
-# Inside Docker, the frontend container refers to the backend container by its service name.
-BACKEND_URL = "http://backend:8000"
+# Defaults to localhost for native runs; docker-compose.yml overrides this to
+# http://backend:8000 so the frontend container can reach the backend by service name.
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
 st.set_page_config(
     page_title="CompareNLU — Ticket Chatbots Dashboard",

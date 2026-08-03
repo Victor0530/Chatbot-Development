@@ -3,7 +3,8 @@ import json
 from pymongo import MongoClient
 from dotenv import load_dotenv
 
-load_dotenv()
+_ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+load_dotenv(_ENV_PATH)
 
 MONGO_URI = os.getenv("MONGO_URI", "")
 USE_LOCAL = False
