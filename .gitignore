@@ -38,3 +38,6 @@ AGENTS.md
 # Rasa-specific
 rasa-chatbot/models/
 rasa-chatbot/.rasa/
+
+# NLP chatbot-specific (trained model artifacts, regenerate via train.py)
+nlp-chatbot/models/*.joblib

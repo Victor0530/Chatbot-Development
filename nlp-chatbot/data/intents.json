@@ -1,0 +1,215 @@
+{
+  "intents": [
+    {
+      "tag": "greeting",
+      "patterns": [
+        "hi", "hello", "hey", "good morning", "good afternoon", "good evening",
+        "is anyone there", "hey there", "howdy", "what's up", "yo",
+        "hiya", "greetings", "hello there", "anyone here", "morning",
+        "hi there", "hey bot", "hello bot", "good day", "nice to meet you",
+        "hello, i need some help", "hi, is anyone available", "hey, quick question",
+        "good to see you", "hiya there", "greetings, i have a question",
+        "hi, i have a question about an event", "hello, can you help me"
+      ],
+      "responses": [
+        "Hello! Welcome to the University Event Ticketing Assistant. How can I help you today?",
+        "Hi there! I can help you with event bookings, prices, and schedules. What do you need?"
+      ]
+    },
+    {
+      "tag": "bot_capabilities",
+      "patterns": [
+        "what can you do", "how can you help me", "what can you help me with",
+        "what services do you offer", "what are you able to do", "how can you assist me",
+        "what do you do", "what kind of help can you provide", "tell me what you can do",
+        "what are your capabilities", "how can you do", "what can you assist with",
+        "what can i ask you", "list your features", "what topics can you help with",
+        "what kind of questions can i ask", "how do you work", "what's this bot for",
+        "can you give me an overview of what you offer", "what functions do you support",
+        "what topics do you cover", "explain what you can help with",
+        "what queries can you handle", "can you tell me about your features",
+        "what's your purpose", "what kind of assistant are you"
+      ],
+      "responses": [
+        "I'm the event ticketing assistant. You can ask me about bookings, prices, schedules, venues, payments, cancellations, or refunds.",
+        "I can help with ticket-related questions — booking, pricing, schedules, locations, payments, cancellations, and refunds. What would you like to know?"
+      ]
+    },
+    {
+      "tag": "list_events",
+      "patterns": [
+        "what events are available", "what events do you have", "what events can i buy",
+        "got what event", "show me the events", "list the events", "what's on",
+        "what events are there", "which events can i attend", "what kind of events do you have",
+        "what events are happening", "what events are coming up", "any events available",
+        "what tickets are available", "what event options are there", "what events can i book",
+        "tell me the available events", "which events are on offer", "what's happening this week",
+        "list of upcoming events", "what events do you offer", "what events are running",
+        "can you show me a list of events", "what events are currently open for booking"
+      ],
+      "responses": [
+        "We currently have several events open for booking: concerts, workshops, seminars, the graduation ceremony, and football matches. Which one would you like to know more about?",
+        "Right now you can book tickets for concerts, workshops, seminars, graduation ceremonies, and football matches. Let me know which one interests you!"
+      ]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": [
+        "bye", "goodbye", "see you later", "see you", "thanks bye", "that's all",
+        "i have to go", "bye bye", "catch you later", "i'm done", "that's all i needed",
+        "talk to you later", "see ya", "farewell", "i'm leaving now",
+        "ok bye", "alright thanks bye", "no more questions", "that will be all",
+        "i'm heading out now", "that's it for me, thanks", "i'll come back later",
+        "see you around", "thank you, goodbye", "i'm signing off now",
+        "that's everything i needed, bye", "alright, take care"
+      ],
+      "responses": [
+        "Goodbye! Enjoy the event.",
+        "See you soon! Feel free to come back if you have more questions."
+      ]
+    },
+    {
+      "tag": "thanks",
+      "patterns": [
+        "thanks", "thank you", "that helps", "thanks a lot", "appreciate it",
+        "thank you so much", "thanks for the help", "much appreciated", "great, thanks",
+        "perfect thank you", "thanks for your help", "cheers", "thank you very much",
+        "that's helpful thanks", "awesome thanks", "cool thanks",
+        "thanks so much for the info", "that was really helpful", "thank you, appreciate the help",
+        "cheers for that", "thanks, that answers my question"
+      ],
+      "responses": [
+        "You're welcome!",
+        "Happy to help!"
+      ]
+    },
+    {
+      "tag": "book_ticket",
+      "patterns": [
+        "i want to book a ticket", "book a ticket for the concert", "how do i buy a ticket",
+        "i would like to reserve a seat", "can i purchase tickets", "book ticket for the workshop",
+        "i want to sign up for the event", "how to get a ticket",
+        "can you help me book tickets", "i need to buy 2 tickets", "how do i register for the seminar",
+        "i want to reserve tickets for the show", "book me a seat for the concert",
+        "how can i purchase a ticket online", "i'd like to book tickets for tomorrow's event",
+        "can i get tickets for the football match", "help me book a spot at the workshop",
+        "i want to register for the event", "how do i secure my seat", "book 3 tickets please",
+        "i'd like to buy tickets for the graduation ceremony", "i want to purchase a seat now",
+        "please book me a ticket", "how do i order tickets online",
+        "i'd like to purchase a new ticket", "can you book me a seat please",
+        "i want to make a new reservation", "sign me up for the event please",
+        "i'd like to reserve a spot at the seminar", "book a new ticket for me"
+      ],
+      "responses": [
+        "Sure! Please tell me the event name and the number of tickets you would like to book.",
+        "I can help you book a ticket. Which event are you interested in?"
+      ]
+    },
+    {
+      "tag": "cancel_ticket",
+      "patterns": [
+        "i want to cancel my ticket", "cancel my booking", "how do i cancel a reservation",
+        "i need to cancel my order", "can i cancel my ticket",
+        "please cancel my booking", "i'd like to cancel my registration", "how to cancel my ticket order",
+        "cancel my reservation for the concert", "i no longer want to attend, cancel my ticket",
+        "how do i undo my booking", "i want to withdraw my registration", "cancel booking number 1234",
+        "can you cancel my seat reservation", "i need to unregister from the event",
+        "how can i cancel my order online", "cancel my ticket please", "i changed my mind, cancel it",
+        "i need to stop my booking", "please remove my reservation",
+        "i want to withdraw from the event", "cancel my registration for the workshop",
+        "i don't want to attend anymore, please cancel", "please cancel my existing order"
+      ],
+      "responses": [
+        "I can help you cancel your ticket. Could you provide your booking reference number?",
+        "To cancel your ticket, please share your order ID."
+      ]
+    },
+    {
+      "tag": "check_price",
+      "patterns": [
+        "how much is a ticket", "what is the price of the ticket", "ticket price",
+        "how much does it cost", "price for the event", "how much for vip tickets",
+        "what's the cost of a ticket", "how much do tickets cost", "ticket fees",
+        "what is the entry fee", "how much for a student ticket", "is there a discount for students",
+        "what's the price range for seats", "how much does the workshop cost",
+        "price of general admission tickets", "how much is a vip pass",
+        "what's the ticket price for the concert", "cost breakdown for tickets",
+        "how much would 2 tickets cost", "is there a group discount"
+      ],
+      "responses": [
+        "Ticket prices vary by event and seating category. Which event would you like the price for?",
+        "Could you tell me the event name so I can check the ticket price for you?"
+      ]
+    },
+    {
+      "tag": "event_schedule",
+      "patterns": [
+        "when is the event", "what time does the event start", "event schedule",
+        "what is the date of the event", "when will the concert happen",
+        "what time does the workshop begin", "when does the show start",
+        "what's the schedule for the seminar", "when is the graduation ceremony",
+        "what date is the football match", "when does registration open",
+        "what time should i arrive", "is there a program schedule", "when does the event end",
+        "what days is the event running", "what's the timetable for the festival",
+        "when do doors open", "what time is the keynote speech", "is the event this weekend"
+      ],
+      "responses": [
+        "Please tell me which event you're asking about and I will check the schedule.",
+        "I can look up the schedule for you. What is the event's name?"
+      ]
+    },
+    {
+      "tag": "event_location",
+      "patterns": [
+        "where is the event held", "venue of the event", "event location",
+        "where will the concert take place", "what is the address of the venue",
+        "where is the workshop located", "which hall is the seminar in",
+        "where do i go for the event", "what's the venue address",
+        "is the event on campus", "where is the graduation ceremony held",
+        "which building is the event in", "where can i find the venue",
+        "is there parking at the venue", "how do i get to the venue",
+        "where is the concert hall", "what room is the workshop in",
+        "location of the football match", "directions to the event venue",
+        "which venue is hosting the event", "what's the location for the workshop",
+        "can you tell me the venue address"
+      ],
+      "responses": [
+        "Let me know the event name and I will tell you the venue.",
+        "Which event's location are you asking about?"
+      ]
+    },
+    {
+      "tag": "payment_methods",
+      "patterns": [
+        "what payment methods do you accept", "can i pay with credit card",
+        "do you accept online banking", "how can i pay for my ticket",
+        "do you accept debit card", "can i pay with paypal", "is e-wallet payment available",
+        "what payment options are there", "can i pay by fpx", "do you take cash payments",
+        "can i pay using touch n go", "is grabpay accepted", "how do i pay online",
+        "what forms of payment can i use", "can i pay in installments",
+        "do you accept visa or mastercard", "is there a payment gateway"
+      ],
+      "responses": [
+        "We accept credit/debit cards, online banking, and e-wallets.",
+        "You can pay via card, FPX online banking, or e-wallet at checkout."
+      ]
+    },
+    {
+      "tag": "refund_policy",
+      "patterns": [
+        "what is the refund policy", "can i get a refund", "how do refunds work",
+        "will i get my money back if i cancel",
+        "how long does a refund take", "am i eligible for a refund", "what's your cancellation policy",
+        "can i get a full refund", "how much is the refund processing fee",
+        "is my ticket refundable", "what happens if the event is cancelled, do i get a refund",
+        "can i get my money back after cancelling", "how do i request a refund",
+        "what's the deadline for requesting a refund", "do you refund service fees",
+        "can i get a partial refund"
+      ],
+      "responses": [
+        "Refunds are available up to 7 days before the event, minus a processing fee.",
+        "You can request a refund at least 7 days before the event date."
+      ]
+    }
+  ]
+}

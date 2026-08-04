@@ -1,0 +1,6 @@
+nltk
+scikit-learn
+joblib
+fastapi
+uvicorn
+pymongo[srv]

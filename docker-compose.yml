@@ -36,3 +36,12 @@ services:
       - ./backend/.env
     command: rasa run actions
 
+  nlp-chatbot:
+    build: ./nlp-chatbot
+    volumes:
+      - ./nlp-chatbot:/app
+    ports:
+      - "8600:8600"
+    env_file:
+      - ./backend/.env
+
