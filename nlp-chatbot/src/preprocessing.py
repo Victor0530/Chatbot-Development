@@ -1,4 +1,5 @@
 """NLP preprocessing pipeline (Chapter 6: tokenization, stopword removal, lemmatization)."""
+import re
 import string
 
 import nltk
@@ -35,10 +36,35 @@ _stopwords = set(stopwords.words("english")) - {
 }
 _punctuation = set(string.punctuation)
 
+# word_tokenize splits contractions into the stem plus a bare clitic
+# ("that's" -> "that", "'s"; "i'm" -> "i", "'m"). That clitic isn't real
+# vocabulary - it's neither punctuation nor in the stopword list - so it
+# survives as noise while the word it stood for (is/am/will/not...) is lost.
+# Expanding contractions before tokenizing avoids that: the expansion is
+# almost always a stopword itself, so it gets filtered out below the same as
+# if the contraction had never been there.
+_CONTRACTIONS = [
+    (re.compile(r"\bwon't\b"), "will not"),
+    (re.compile(r"\bcan't\b"), "cannot"),
+    (re.compile(r"n't\b"), " not"),
+    (re.compile(r"'re\b"), " are"),
+    (re.compile(r"'ve\b"), " have"),
+    (re.compile(r"'ll\b"), " will"),
+    (re.compile(r"'d\b"), " would"),
+    (re.compile(r"'m\b"), " am"),
+    (re.compile(r"'s\b"), " is"),
+]
+
+
+def _expand_contractions(text: str) -> str:
+    for pattern, expansion in _CONTRACTIONS:
+        text = pattern.sub(expansion, text)
+    return text
+
 
 def preprocess(text: str) -> str:
-    """Lowercase, tokenize, strip punctuation/stopwords, then lemmatize."""
-    tokens = word_tokenize(text.lower())
+    """Lowercase, expand contractions, tokenize, strip punctuation/stopwords, then lemmatize."""
+    tokens = word_tokenize(_expand_contractions(text.lower()))
     cleaned = [
         _lemmatizer.lemmatize(token)
         for token in tokens

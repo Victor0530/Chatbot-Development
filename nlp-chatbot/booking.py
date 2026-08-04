@@ -56,8 +56,25 @@ def has_active_session(session_id: str) -> bool:
     return session_id in _sessions
 
 
-def start_session(session_id: str) -> None:
-    _sessions[session_id] = {"event_name": None, "awaiting": "event_name"}
+def start_session(session_id: str, carried_event: Optional[str] = None) -> Optional[tuple[str, str]]:
+    """Start a booking session. If carried_event is given (the event this
+    session was already talking about via a price/schedule/location lookup),
+    skip straight to asking for quantity instead of making the user repeat
+    the event name, and return the quantity prompt. Returns None when there's
+    no carried event (or it no longer resolves) - the caller then falls back
+    to the normal "which event?" flow via handle_turn."""
+    if carried_event is None:
+        _sessions[session_id] = {"event_name": None, "awaiting": "event_name"}
+        return None
+
+    db = _get_db()
+    ticket = db.tickets.find_one({"event": carried_event}) if db is not None else None
+    if not ticket:
+        _sessions[session_id] = {"event_name": None, "awaiting": "event_name"}
+        return None
+
+    _sessions[session_id] = {"event_name": ticket["event"], "awaiting": "ticket_quantity"}
+    return f"Great, {ticket['event']}! How many tickets would you like?", "book_ticket_awaiting_quantity"
 
 
 def handle_turn(session_id: str, message: str) -> tuple[str, str]:

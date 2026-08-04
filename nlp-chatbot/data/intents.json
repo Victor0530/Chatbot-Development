@@ -8,7 +8,7 @@
         "hiya", "greetings", "hello there", "anyone here", "morning",
         "hi there", "hey bot", "hello bot", "good day", "nice to meet you",
         "hello, i need some help", "hi, is anyone available", "hey, quick question",
-        "good to see you", "hiya there", "greetings, i have a question",
+        "great to meet you", "hiya there", "greetings, i have a question",
         "hi, i have a question about an event", "hello, can you help me"
       ],
       "responses": [
@@ -31,8 +31,8 @@
         "what's your purpose", "what kind of assistant are you"
       ],
       "responses": [
-        "I'm the event ticketing assistant. You can ask me about bookings, prices, schedules, venues, payments, cancellations, or refunds.",
-        "I can help with ticket-related questions — booking, pricing, schedules, locations, payments, cancellations, and refunds. What would you like to know?"
+        "I'm the event ticketing assistant. You can ask me about bookings, prices, schedules, venues, payment methods, and our refund policy.",
+        "I can help with ticket-related questions — booking, pricing, schedules, locations, payment methods, and our refund policy. What would you like to know?"
       ]
     },
     {
@@ -55,11 +55,11 @@
     {
       "tag": "goodbye",
       "patterns": [
-        "bye", "goodbye", "see you later", "see you", "thanks bye", "that's all",
+        "bye", "goodbye", "see you later", "see you", "thanks bye", "i'm all done",
         "i have to go", "bye bye", "catch you later", "i'm done", "that's all i needed",
         "talk to you later", "see ya", "farewell", "i'm leaving now",
-        "ok bye", "alright thanks bye", "no more questions", "that will be all",
-        "i'm heading out now", "that's it for me, thanks", "i'll come back later",
+        "ok bye", "alright thanks bye", "no more questions", "that covers everything, bye",
+        "i'm heading out now", "that's everything for me, goodbye", "i'll come back later",
         "see you around", "thank you, goodbye", "i'm signing off now",
         "that's everything i needed, bye", "alright, take care"
       ],
@@ -72,7 +72,7 @@
       "tag": "thanks",
       "patterns": [
         "thanks", "thank you", "that helps", "thanks a lot", "appreciate it",
-        "thank you so much", "thanks for the help", "much appreciated", "great, thanks",
+        "thank you so much", "thanks for the help", "much appreciated, thank you", "great, thanks",
         "perfect thank you", "thanks for your help", "cheers", "thank you very much",
         "that's helpful thanks", "awesome thanks", "cool thanks",
         "thanks so much for the info", "that was really helpful", "thank you, appreciate the help",
@@ -113,15 +113,17 @@
         "please cancel my booking", "i'd like to cancel my registration", "how to cancel my ticket order",
         "cancel my reservation for the concert", "i no longer want to attend, cancel my ticket",
         "how do i undo my booking", "i want to withdraw my registration", "cancel booking number 1234",
-        "can you cancel my seat reservation", "i need to unregister from the event",
+        "can you cancel my seat reservation", "i need to unregister from the event, please cancel it",
         "how can i cancel my order online", "cancel my ticket please", "i changed my mind, cancel it",
         "i need to stop my booking", "please remove my reservation",
         "i want to withdraw from the event", "cancel my registration for the workshop",
-        "i don't want to attend anymore, please cancel", "please cancel my existing order"
+        "i don't want to attend anymore, please cancel", "please cancel my existing order",
+        "i'd like to withdraw my ticket for the event", "please withdraw my registration for the event",
+        "how do i withdraw from the event", "i want to withdraw my seat for the show"
       ],
       "responses": [
-        "I can help you cancel your ticket. Could you provide your booking reference number?",
-        "To cancel your ticket, please share your order ID."
+        "Sorry, this assistant can't process cancellations yet. Please contact support directly to cancel your booking.",
+        "I'm not able to cancel tickets yet — please reach out to our support team for help with that."
       ]
     },
     {
@@ -137,7 +139,7 @@
         "how much would 2 tickets cost", "is there a group discount"
       ],
       "responses": [
-        "Ticket prices vary by event and seating category. Which event would you like the price for?",
+        "Ticket prices vary by event. Which event would you like the price for?",
         "Could you tell me the event name so I can check the ticket price for you?"
       ]
     },
@@ -150,7 +152,7 @@
         "what's the schedule for the seminar", "when is the graduation ceremony",
         "what date is the football match", "when does registration open",
         "what time should i arrive", "is there a program schedule", "when does the event end",
-        "what days is the event running", "what's the timetable for the festival",
+        "when is the event scheduled for", "what's the timetable for the festival",
         "when do doors open", "what time is the keynote speech", "is the event this weekend"
       ],
       "responses": [
@@ -168,10 +170,11 @@
         "is the event on campus", "where is the graduation ceremony held",
         "which building is the event in", "where can i find the venue",
         "is there parking at the venue", "how do i get to the venue",
-        "where is the concert hall", "what room is the workshop in",
+        "where is the concert hall", "which room is the workshop held in",
         "location of the football match", "directions to the event venue",
         "which venue is hosting the event", "what's the location for the workshop",
-        "can you tell me the venue address"
+        "can you tell me the venue address", "at what place", "what place is it at",
+        "what place is it held at", "what place", "at what place is it"
       ],
       "responses": [
         "Let me know the event name and I will tell you the venue.",
@@ -207,8 +210,8 @@
         "can i get a partial refund"
       ],
       "responses": [
-        "Refunds are available up to 7 days before the event, minus a processing fee.",
-        "You can request a refund at least 7 days before the event date."
+        "Our policy: refunds are available up to 7 days before the event, minus a processing fee. This assistant can't submit the request for you yet — please contact support to actually get a refund.",
+        "You're eligible for a refund if you request it at least 7 days before the event date, but please contact support directly since this assistant can't process it yet."
       ]
     }
   ]

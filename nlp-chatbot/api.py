@@ -15,6 +15,13 @@ app = FastAPI(title="NLP (ML) Chatbot API", version="1.0")
 
 _chatbot: ChatBot | None = None
 
+# Intents that have nothing to do with a specific ticket. If the classifier
+# lands here *and* the message names a known event ("how about Concert B"
+# right after a price/schedule/location question), it's more likely a
+# misclassification than an actual topic change - lookup.try_continue()
+# reuses the session's last lookup intent instead.
+_NON_TICKET_INTENTS = {None, "greeting", "bot_capabilities", "thanks", "goodbye"}
+
 
 class ChatIn(BaseModel):
     message: str
@@ -53,12 +60,24 @@ def chat(payload: ChatIn):
                        "then 'docker compose restart nlp-chatbot'.",
             )
 
-    intent, confidence = _chatbot.predict_intent(payload.message)
+    intent, confidence = _chatbot.resolve_intent(payload.message)
     response_text = _chatbot.get_response(payload.message)
 
     if intent == "book_ticket":
-        booking.start_session(payload.session_id)
+        started = booking.start_session(payload.session_id, lookup.get_last_event(payload.session_id))
+        if started is not None:
+            response_text, intent = started
     elif intent in lookup.LOOKUP_INTENTS:
-        lookup.start_session(payload.session_id, intent)
+        answered = lookup.try_answer(payload.session_id, intent, payload.message)
+        if answered is not None:
+            response_text, intent = answered
+        else:
+            lookup.start_session(payload.session_id, intent)
+    elif intent == "list_events":
+        response_text = lookup.list_events()
+    elif intent in _NON_TICKET_INTENTS:
+        continued = lookup.try_continue(payload.session_id, payload.message)
+        if continued is not None:
+            response_text, intent = continued
 
     return ChatOut(response=response_text, intent=intent, confidence=confidence)
