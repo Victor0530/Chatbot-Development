@@ -64,7 +64,8 @@ def chat(payload: ChatIn):
     response_text = _chatbot.get_response(payload.message)
 
     if intent == "book_ticket":
-        started = booking.start_session(payload.session_id, lookup.get_last_event(payload.session_id))
+        carried_event = lookup.get_last_event(payload.session_id) or lookup.find_event_in_message(payload.message)
+        started = booking.start_session(payload.session_id, carried_event, payload.message)
         if started is not None:
             response_text, intent = started
     elif intent in lookup.LOOKUP_INTENTS:
@@ -75,6 +76,7 @@ def chat(payload: ChatIn):
             lookup.start_session(payload.session_id, intent)
     elif intent == "list_events":
         response_text = lookup.list_events()
+        booking.start_selection_session(payload.session_id)
     elif intent in _NON_TICKET_INTENTS:
         continued = lookup.try_continue(payload.session_id, payload.message)
         if continued is not None:

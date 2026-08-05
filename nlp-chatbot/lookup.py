@@ -6,6 +6,7 @@ pending question (the event name), so a session is just the intent tag
 waiting on an answer rather than a multi-state machine.
 """
 import os
+import re
 from typing import Optional
 
 from pymongo import MongoClient
@@ -74,21 +75,75 @@ def get_last_event(session_id: str) -> Optional[str]:
     return _last_event.get(session_id)
 
 
-def _find_ticket(db, text: str) -> Optional[dict]:
-    """Find a ticket whose event is mentioned in `text`, either as a short
-    reply ("Concert A", "broadway") or embedded in a full sentence ("what's
-    the price of Broadway Musical"). Matches in both substring directions so
-    both styles work; messages under 3 chars are skipped to avoid trivial
-    false positives (e.g. "at" matching nothing sensible)."""
+def find_event_in_message(message: str) -> Optional[str]:
+    """Look for a known event name mentioned in `message` itself, with no
+    session state involved. Covers replies like "Concert A" sent right after
+    list_events - lookup never got a chance to record that event as this
+    session's context (list_events doesn't call try_answer/start_session),
+    so get_last_event() alone would miss it and the caller would re-ask for
+    an event name the user already gave."""
+    db = _get_db()
+    if db is None:
+        return None
+    try:
+        ticket = _find_ticket(db, message)
+    except PyMongoError:
+        return None
+    return ticket["event"] if ticket else None
+
+
+def _word_match(needle: str, haystack: str) -> bool:
+    """Whether `needle` appears in `haystack` as whole words, not just as a
+    raw substring - a raw `in` check lets short words match inside an
+    unrelated longer word (e.g. "ship" inside "championship")."""
+    return re.search(rf"\b{re.escape(needle)}\b", haystack) is not None
+
+
+def _matching_tickets(db, text: str) -> list[dict]:
+    """All tickets whose event name is referenced in `text`, either as a
+    short reply ("Concert A", "broadway") or embedded in a full sentence
+    ("what's the price of Broadway Musical"). Matches in both directions so
+    both styles work, but only on whole-word/phrase boundaries. Messages
+    under 3 chars are skipped to avoid trivial false positives (e.g. "at"
+    matching nothing sensible). Can return more than one ticket when the
+    text is genuinely ambiguous (e.g. "concert" matches both Concert A and
+    Concert B) - callers decide whether to disambiguate or just treat that
+    the same as no match."""
     text_lower = text.strip().lower()
     if len(text_lower) < 3:
-        return None
+        return []
+    matches = []
     for t in db.tickets.find():
         event_lower = t["event"].lower()
         short_lower = t["event"].split(" - ")[0].lower()
-        if event_lower in text_lower or short_lower in text_lower or text_lower in event_lower:
-            return t
-    return None
+        if (
+            _word_match(short_lower, text_lower)
+            or _word_match(event_lower, text_lower)
+            or _word_match(text_lower, event_lower)
+        ):
+            matches.append(t)
+    return matches
+
+
+def _find_ticket(db, text: str) -> Optional[dict]:
+    """A single unambiguous ticket match, or None if `text` matched no event
+    or matched more than one (see _matching_tickets for the ambiguous case;
+    describe_match_failure() turns that into a clarifying message instead of
+    a flat "not found")."""
+    matches = _matching_tickets(db, text)
+    return matches[0] if len(matches) == 1 else None
+
+
+def describe_match_failure(db, text: str) -> str:
+    """The right fallback message for a failed event lookup: name the
+    candidates when `text` was ambiguous between more than one event, or
+    list every bookable event when it matched none at all."""
+    matches = _matching_tickets(db, text)
+    if len(matches) > 1:
+        names = ", ".join(t["event"] for t in matches)
+        return f"I found more than one event matching '{text}': {names}. Which one did you mean?"
+    events = ", ".join(t["event"] for t in db.tickets.find())
+    return f"I couldn't find an event matching '{text}'. Available events: {events or 'none'}."
 
 
 def try_answer(session_id: str, intent: str, message: str) -> Optional[tuple[str, str]]:
@@ -166,11 +221,7 @@ def handle_turn(session_id: str, message: str) -> tuple[str, str]:
         )
 
     if not ticket:
-        events = ", ".join(t["event"] for t in db.tickets.find())
-        return (
-            f"I couldn't find an event matching '{message}'. Available events: {events or 'none'}.",
-            f"{intent}_not_found",
-        )
+        return describe_match_failure(db, message), f"{intent}_not_found"
 
     _last_event[session_id] = ticket["event"]
     _last_intent[session_id] = intent
