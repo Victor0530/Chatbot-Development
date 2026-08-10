@@ -38,18 +38,6 @@ class ChatOut(BaseModel):
 def chat(payload: ChatIn):
     global _chatbot
 
-    # Mid-booking: the message is an answer to a pending slot (event name or
-    # quantity), not a fresh message to classify.
-    if booking.has_active_session(payload.session_id):
-        response_text, intent = booking.handle_turn(payload.session_id, payload.message)
-        return ChatOut(response=response_text, intent=intent, confidence=1.0)
-
-    # Mid-lookup: the message is the event name we asked for, not a fresh
-    # message to classify.
-    if lookup.has_active_session(payload.session_id):
-        response_text, intent = lookup.handle_turn(payload.session_id, payload.message)
-        return ChatOut(response=response_text, intent=intent, confidence=1.0)
-
     if _chatbot is None:
         try:
             _chatbot = ChatBot("svm")
@@ -60,25 +48,46 @@ def chat(payload: ChatIn):
                        "then 'docker compose restart nlp-chatbot'.",
             )
 
-    intent, confidence = _chatbot.resolve_intent(payload.message)
-    response_text = _chatbot.get_response(payload.message)
+    session_id, message = payload.session_id, payload.message
+
+    # Mid-booking/mid-lookup: the message is normally an answer to a pending
+    # slot (event name, quantity, yes/no), not a fresh message to classify.
+    # We still classify it here so that if it *doesn't* answer what's being
+    # asked, handle_turn can tell a genuine topic change (confident
+    # intent_hint) from just a bad/garbled answer, and bail out of the stuck
+    # flow into the normal routing below rather than repeating the same
+    # prompt forever.
+    if booking.has_active_session(session_id) or lookup.has_active_session(session_id):
+        intent_hint, confidence_hint = _chatbot.resolve_intent(message)
+        if booking.has_active_session(session_id):
+            result = booking.handle_turn(session_id, message, intent_hint, confidence_hint)
+        else:
+            result = lookup.handle_turn(session_id, message, intent_hint, confidence_hint)
+        if result is not None:
+            response_text, intent = result
+            return ChatOut(response=response_text, intent=intent, confidence=1.0)
+        intent, confidence = intent_hint, confidence_hint
+    else:
+        intent, confidence = _chatbot.resolve_intent(message)
+
+    response_text = _chatbot.get_response(message)
 
     if intent == "book_ticket":
-        carried_event = lookup.get_last_event(payload.session_id) or lookup.find_event_in_message(payload.message)
-        started = booking.start_session(payload.session_id, carried_event, payload.message)
+        carried_event = lookup.get_last_event(session_id) or lookup.find_event_in_message(message)
+        started = booking.start_session(session_id, carried_event, message)
         if started is not None:
             response_text, intent = started
     elif intent in lookup.LOOKUP_INTENTS:
-        answered = lookup.try_answer(payload.session_id, intent, payload.message)
+        answered = lookup.try_answer(session_id, intent, message)
         if answered is not None:
             response_text, intent = answered
         else:
-            lookup.start_session(payload.session_id, intent)
+            lookup.start_session(session_id, intent)
     elif intent == "list_events":
         response_text = lookup.list_events()
-        booking.start_selection_session(payload.session_id)
+        booking.start_selection_session(session_id)
     elif intent in _NON_TICKET_INTENTS:
-        continued = lookup.try_continue(payload.session_id, payload.message)
+        continued = lookup.try_continue(session_id, message)
         if continued is not None:
             response_text, intent = continued
 

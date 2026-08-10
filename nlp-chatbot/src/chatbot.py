@@ -73,11 +73,17 @@ class ChatBot:
         vectorizer actually knows ("price"), so a typo doesn't just vanish
         as an out-of-vocabulary token and leave the classifier guessing off
         whatever's left. Only touches tokens of 4+ chars (short words have
-        too many equally-close neighbors to correct safely) and skips
-        anything already in vocabulary."""
+        too many equally-close neighbors to correct safely), skips anything
+        already in vocabulary, and skips purely numeric tokens - digit
+        strings have no real "spelling" to correct, and fuzzy-matching them
+        would only ever hit other digit strings that happen to share several
+        characters (e.g. "123456" ~ "1234", the latter pulled into the
+        vocabulary from a single "cancel booking number 1234" training
+        example), misattributing arbitrary numbers to whatever intent that
+        example belonged to."""
         corrected = []
         for token in cleaned.split():
-            if token in self._vocab or len(token) < 4:
+            if token in self._vocab or len(token) < 4 or token.isdigit():
                 corrected.append(token)
                 continue
             match = difflib.get_close_matches(token, self._vocab, n=1, cutoff=0.8)
