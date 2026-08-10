@@ -41,7 +41,8 @@ def get_tickets():
 def chat_endpoint(payload: ChatRequest):
     message = payload.message.strip()
     bot = payload.bot.lower()
-    
+    session_id = payload.session_id or str(uuid.uuid4())[:8]
+
     if bot not in ["rasa", "nlp", "dialogflow"]:
         raise HTTPException(status_code=400, detail="Invalid bot type. Choose rasa, nlp, or dialogflow.")
         
@@ -74,15 +75,24 @@ def chat_endpoint(payload: ChatRequest):
         except Exception as e:
             response_text = f"Could not connect to Rasa: {e}"
     elif bot == "nlp":
-        # Keep existing mock for NLP
-        response_text = f"[NLP Model Bot (Mock)]: Processing intent for '{message}'. TF-IDF classification indicates a ticketing query."
+        try:
+            # The nlp-chatbot container is reachable via its service name 'nlp-chatbot'
+            response = requests.post("http://nlp-chatbot:8600/chat", json={"message": message, "session_id": session_id}, timeout=20)
+            if response.status_code == 200:
+                data = response.json()
+                response_text = data.get("response", response_text)
+                intent = data.get("intent") or intent
+                confidence = data.get("confidence") or confidence
+            else:
+                response_text = f"NLP chatbot error: {response.status_code}"
+        except Exception as e:
+            response_text = f"Could not connect to NLP chatbot: {e}"
     elif bot == "dialogflow":
         response_text, intent, confidence = handle_dialogflow_message(payload.session_id or "default", message)
         
     # Log conversation to database
     conversations_col = get_collection("conversations")
-    session_id = payload.session_id or str(uuid.uuid4())[:8]
-    
+
     conversations_col.insert_one({
         "session_id": session_id,
         "bot_type": bot,

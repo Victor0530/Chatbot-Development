@@ -24,11 +24,18 @@ This project is fully containerized using Docker. This ensures that the environm
     - **Frontend UI:** `http://localhost:8501`
     - **Rasa Chatbot API:** `http://localhost:5005`
     - **Action Server:** `http://localhost:5055` (Connected to Rasa via endpoints.yml)
+    - **NLP (ML) Chatbot API:** `http://localhost:8600`
 
     *Important (First-time setup):* Because trained Rasa models are excluded from version control, you must train the model inside the container after starting the stack for the first time:
     ```bash
     docker compose exec rasa rasa train
     docker compose restart rasa actions
+    ```
+
+    Likewise, the NLP chatbot's TF-IDF/ANN model is excluded from version control and must be trained after the first start:
+    ```bash
+    docker compose exec nlp-chatbot python train.py
+    docker compose restart nlp-chatbot
     ```
 
 ## Stopping the Project
