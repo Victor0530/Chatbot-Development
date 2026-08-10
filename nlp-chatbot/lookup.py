@@ -17,6 +17,12 @@ DB_NAME = os.getenv("DB_NAME", "chatbot_ticketing")
 
 CANCEL_WORDS = {"cancel", "stop", "never mind", "nevermind"}
 
+# Mirrors booking.py's ESCAPE_CONFIDENCE_THRESHOLD - how sure the ML
+# classifier has to be about a different intent before a message that
+# didn't name a known event is treated as a topic change rather than just a
+# bad answer to "which event?".
+ESCAPE_CONFIDENCE_THRESHOLD = 0.5
+
 LOOKUP_INTENTS = {"check_price", "event_schedule", "event_location"}
 
 _ANSWER_BUILDERS = {
@@ -198,8 +204,18 @@ def try_continue(session_id: str, message: str) -> Optional[tuple[str, str]]:
     return _ANSWER_BUILDERS[intent](ticket), f"{intent}_answered"
 
 
-def handle_turn(session_id: str, message: str) -> tuple[str, str]:
-    """Resolve the pending lookup with the event name just given. Returns (response_text, intent_label)."""
+def handle_turn(
+    session_id: str,
+    message: str,
+    intent_hint: Optional[str] = None,
+    confidence_hint: float = 0.0,
+) -> Optional[tuple[str, str]]:
+    """Resolve the pending lookup with the event name just given. Returns
+    (response_text, intent_label), or None if no event matched *and* the
+    message reads as a confident, different intent per
+    `intent_hint`/`confidence_hint` - the caller (api.py) should then route
+    the message fresh instead of getting an unhelpful "couldn't find that
+    event" reply to a question that was never about an event at all."""
     intent = _sessions.pop(session_id)
 
     if message.lower().strip().strip("?!.") in CANCEL_WORDS:
@@ -221,6 +237,8 @@ def handle_turn(session_id: str, message: str) -> tuple[str, str]:
         )
 
     if not ticket:
+        if intent_hint is not None and confidence_hint >= ESCAPE_CONFIDENCE_THRESHOLD:
+            return None
         return describe_match_failure(db, message), f"{intent}_not_found"
 
     _last_event[session_id] = ticket["event"]

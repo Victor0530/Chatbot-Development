@@ -29,6 +29,37 @@ CANCEL_WORDS = {"cancel", "stop", "never mind", "nevermind"}
 AFFIRMATIVE_PREFIXES = ("yes", "yeah", "yep", "yup", "sure", "ok", "okay", "please", "book")
 NEGATIVE_PREFIXES = ("no", "nah", "nope", "not now", "not interested")
 
+# How sure the ML classifier has to be about a *different* intent before a
+# stuck-state message is treated as a topic change rather than a bad answer
+# to what this state asked for. Higher than src/chatbot.py's own
+# CONFIDENCE_THRESHOLD (0.2) on purpose: a borderline guess isn't enough
+# reason to abandon a booking already in progress, only a fairly confident
+# one is.
+ESCAPE_CONFIDENCE_THRESHOLD = 0.5
+
+
+def _mentions_other_event(message: str, current_event: str) -> bool:
+    """Whether `message` names a different, resolvable event than the one
+    this session is currently confirming/quantifying. This is checked ahead
+    of parse_quantity's implicit-"a"/"an" heuristic on purpose: a message
+    like "actually book a ticket for the broadway musical instead" contains
+    "a ticket", which that heuristic reads as an implicit "yes, one" -
+    finalizing a booking for the *current* (wrong) event instead of letting
+    the topic switch to the named one fall through to the escape hatch."""
+    mentioned = lookup.find_event_in_message(message)
+    return mentioned is not None and mentioned != current_event
+
+
+def _should_escape(intent_hint: Optional[str], confidence_hint: float) -> bool:
+    """Whether a message that failed to parse as this state's expected
+    answer (quantity, event name, yes/no) should instead be treated as the
+    user moving on to a different, unrelated request. Without this, every
+    awaiting state traps the session: nothing but an exact-format answer or
+    the literal word "cancel" can ever get a reply, so a legitimate new
+    question asked mid-flow just gets the same retry prompt repeated at it
+    forever."""
+    return intent_hint is not None and confidence_hint >= ESCAPE_CONFIDENCE_THRESHOLD
+
 _client: Optional[MongoClient] = None
 # session_id -> {"event_name": str | None, "awaiting": "event_name" | "event_selection"
 #                | "confirm_booking" | "ticket_quantity"}
@@ -61,8 +92,12 @@ def parse_quantity(text: str, allow_implicit_one: bool = True) -> Optional[int]:
         pass
     if text in WORD_TO_NUM:
         return WORD_TO_NUM[text]
-    match = re.search(r"\d+(\.\d+)?", text)
+    match = re.search(r"-?\d+(\.\d+)?", text)
     if match:
+        if match.group().startswith("-"):
+            # a negative count ("-1 tickets") is invalid - reject it rather
+            # than silently dropping the sign and treating it as positive.
+            return None
         if match.group(1):
             # a decimal number ("2.5 tickets") isn't a valid ticket count -
             # reject it rather than silently truncating to the integer part.
@@ -130,8 +165,20 @@ def start_selection_session(session_id: str) -> None:
     _sessions[session_id] = {"event_name": None, "awaiting": "event_selection"}
 
 
-def handle_turn(session_id: str, message: str) -> tuple[str, str]:
-    """Advance the booking state machine one turn. Returns (response_text, intent_label)."""
+def handle_turn(
+    session_id: str,
+    message: str,
+    intent_hint: Optional[str] = None,
+    confidence_hint: float = 0.0,
+) -> Optional[tuple[str, str]]:
+    """Advance the booking state machine one turn. Returns (response_text,
+    intent_label), or None if the message doesn't match what this state is
+    waiting for *and* reads as a confident, different intent per
+    `intent_hint`/`confidence_hint` (the ML classifier's read on the raw
+    message, passed in by api.py). A None return means the session has
+    already been abandoned - the caller should fall through to routing the
+    message as a fresh top-level request instead of repeating a prompt the
+    user has clearly moved past."""
     if message.lower().strip().strip("?!.") in CANCEL_WORDS:
         cancelled = _sessions.pop(session_id, None)
         if cancelled is not None and cancelled["awaiting"] in ("event_selection", "confirm_booking"):
@@ -152,12 +199,12 @@ def handle_turn(session_id: str, message: str) -> tuple[str, str]:
     session = _sessions[session_id]
     try:
         if session["awaiting"] == "event_selection":
-            return _handle_event_selection(db, session, message)
+            return _handle_event_selection(db, session_id, session, message, intent_hint, confidence_hint)
         if session["awaiting"] == "confirm_booking":
-            return _handle_confirm(db, session_id, session, message)
+            return _handle_confirm(db, session_id, session, message, intent_hint, confidence_hint)
         if session["awaiting"] == "event_name":
-            return _handle_event_name(db, session, message)
-        return _handle_quantity(db, session_id, session, message)
+            return _handle_event_name(db, session_id, session, message, intent_hint, confidence_hint)
+        return _handle_quantity(db, session_id, session, message, intent_hint, confidence_hint)
     except PyMongoError:
         _sessions.pop(session_id, None)
         return (
@@ -166,10 +213,15 @@ def handle_turn(session_id: str, message: str) -> tuple[str, str]:
         )
 
 
-def _handle_event_name(db, session: dict, message: str) -> tuple[str, str]:
+def _handle_event_name(
+    db, session_id: str, session: dict, message: str, intent_hint: Optional[str], confidence_hint: float
+) -> Optional[tuple[str, str]]:
     event_name = lookup.find_event_in_message(message)
     ticket = db.tickets.find_one({"event": event_name}) if event_name else None
     if not ticket:
+        if _should_escape(intent_hint, confidence_hint):
+            _sessions.pop(session_id, None)
+            return None
         return lookup.describe_match_failure(db, message), "book_ticket_awaiting_event"
     session["event_name"] = ticket["event"]
     session["awaiting"] = "ticket_quantity"
@@ -183,10 +235,15 @@ def _event_details(ticket: dict) -> str:
     )
 
 
-def _handle_event_selection(db, session: dict, message: str) -> tuple[str, str]:
+def _handle_event_selection(
+    db, session_id: str, session: dict, message: str, intent_hint: Optional[str], confidence_hint: float
+) -> Optional[tuple[str, str]]:
     event_name = lookup.find_event_in_message(message)
     ticket = db.tickets.find_one({"event": event_name}) if event_name else None
     if not ticket:
+        if _should_escape(intent_hint, confidence_hint):
+            _sessions.pop(session_id, None)
+            return None
         return lookup.describe_match_failure(db, message), "list_events_not_found"
     session["event_name"] = ticket["event"]
     session["awaiting"] = "confirm_booking"
@@ -196,7 +253,13 @@ def _handle_event_selection(db, session: dict, message: str) -> tuple[str, str]:
     )
 
 
-def _handle_confirm(db, session_id: str, session: dict, message: str) -> tuple[str, str]:
+def _handle_confirm(
+    db, session_id: str, session: dict, message: str, intent_hint: Optional[str], confidence_hint: float
+) -> Optional[tuple[str, str]]:
+    if _mentions_other_event(message, session["event_name"]):
+        _sessions.pop(session_id, None)
+        return None
+
     normalized = message.lower().strip().strip("?!.")
     qty = parse_quantity(message)
 
@@ -214,15 +277,28 @@ def _handle_confirm(db, session_id: str, session: dict, message: str) -> tuple[s
             "book_ticket_awaiting_quantity",
         )
 
+    if _should_escape(intent_hint, confidence_hint):
+        _sessions.pop(session_id, None)
+        return None
+
     return (
         "Sorry, would you like to book a ticket for this event? (yes/no)",
         "list_events_confirm_retry",
     )
 
 
-def _handle_quantity(db, session_id: str, session: dict, message: str) -> tuple[str, str]:
+def _handle_quantity(
+    db, session_id: str, session: dict, message: str, intent_hint: Optional[str], confidence_hint: float
+) -> Optional[tuple[str, str]]:
+    if _mentions_other_event(message, session["event_name"]):
+        _sessions.pop(session_id, None)
+        return None
+
     qty = parse_quantity(message)
     if qty is None:
+        if _should_escape(intent_hint, confidence_hint):
+            _sessions.pop(session_id, None)
+            return None
         return (
             "I couldn't understand the number of tickets. Could you specify a number?",
             "book_ticket_awaiting_quantity",
