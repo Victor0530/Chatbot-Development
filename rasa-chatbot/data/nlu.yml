@@ -28,9 +28,24 @@ nlu:
       - what shows are playing?
       - are there any concerts?
       - which events are available
-      - what do u recommend
-      - recommend me something
       - show me the concerts
+      - what events are happening on [tomorrow](timeframe)
+      - show events for [June](timeframe)
+      - what events are happening on [2026-06-15](date)
+      - what events are playing at [Stadium XYZ](venue)?
+      - what events are playing at [Arena Green](venue)?
+      - how many seats are left for [Concert A](event_name)?
+      - show me [music](category) events
+      - show me [theater](category) events
+      - what are the ticket prices?
+      - show events under [RM50](price)
+      - events below [RM100](price)
+      - what events are cheaper than [RM80](price)
+      - show me events under [RM200](price)
+      - events less than [RM150](price)
+      - which event has the most available seats?
+      - which event has the least available seats?
+      - find events at [Arena Green](venue) on [2026-06-15](date)
 
   - intent: inform_ticket_query
     examples: |
@@ -42,8 +57,15 @@ nlu:
     examples: |
       - [Concert A](event_name)
       - [Concert B](event_name)
+      - [Concert C](event_name)
       - [concert a](event_name)
       - [concert b](event_name)
+      - [concert c](event_name)
+      - [concert A](event_name)
+      - [concert B](event_name)
+      - [concert C](event_name)
+      - [concert](event_name)
+      - [Concert](event_name)
       - [Pop Night](event_name)
       - [Rock Fest](event_name)
       - [Broadway Musical](event_name)
@@ -66,17 +88,59 @@ nlu:
       - [five](ticket_quantity)
       - I want [Concert A](event_name)
       - I want [Concert B](event_name)
+      - I want [concert a](event_name)
+      - I want [concert b](event_name)
+      - I want [concert c](event_name)
       - I want [2](ticket_quantity) tickets
       - 1
       - 2
       - 3
       - 4
       - 5
+      - 0
       - one
       - two
       - three
       - four
       - five
+
+  - intent: confirm_booking
+    examples: |
+      - yes
+      - confirm
+      - book it
+      - proceed
+      - sure
+      - go ahead
+      - yep
+      - yeah
+      - confirm booking
+      - i confirm
+
+  - intent: cancel_booking
+    examples: |
+      - no
+      - cancel
+      - nevermind
+      - stop
+      - abort
+      - don't book
+      - forget it
+      - nah
+      - nope
+      - cancel booking
+      - i changed my mind
+
+  - intent: change_event
+    examples: |
+      - I want a different event
+      - change event
+      - switch event
+      - actually let me pick another
+      - I want to change my event
+      - different event
+      - pick another event
+      - can I change the event
 
   - lookup: event_name
     examples: |
@@ -85,6 +149,13 @@ nlu:
       - Broadway Musical
       - Championship Basketball
       - Standup Comedy Gala
+      - Concert A
+      - Concert B
+      - Concert C
+      - concert a
+      - concert b
+      - concert c
+      - concert
       - Pop Night
       - Rock Fest
       - broadway

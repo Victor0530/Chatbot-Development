@@ -53,7 +53,7 @@ def handle_dialogflow_message(session_id: str, message: str):
 
         if matches:
             lines = [
-                f"- {t.get('event')} — {t.get('date')} @ {t.get('venue')} (${t.get('price')}, {t.get('available')} left)"
+                f"- {t.get('event')} — {t.get('date')} @ {t.get('venue')} (RM{t.get('price')}, {t.get('available')} left)"
                 for t in matches
             ]
             response_text = "Here are some events you might like:\n" + "\n".join(lines)

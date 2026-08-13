@@ -55,11 +55,18 @@ def chat_endpoint(payload: ChatRequest):
     if bot == "rasa":
         try:
             rasa_payload = {"sender": payload.session_id or "user", "message": message}
-            # The rasa container is reachable via its service name 'rasa'
+
+            # Get intent via /model/parse
+            parse_response = requests.post("http://rasa:5005/model/parse", json={"text": message}, timeout=20)
+            if parse_response.status_code == 200:
+                parse_data = parse_response.json()
+                intent = parse_data.get("intent", {}).get("name", "unknown")
+                confidence = parse_data.get("intent", {}).get("confidence", 0.0)
+
+            # Get response text via /webhooks/rest/webhook
             response = requests.post("http://rasa:5005/webhooks/rest/webhook", json=rasa_payload, timeout=20)
             if response.status_code == 200:
                 data = response.json()
-                # Rasa REST webhook returns a list of messages
                 if data:
                     response_text = " ".join([msg.get("text", "") for msg in data])
                 else:
@@ -67,9 +74,6 @@ def chat_endpoint(payload: ChatRequest):
                         response_text = "Which event are you interested in?"
                     else:
                         response_text = "I understood you, but have no response."
-                # Note: /webhooks/rest/webhook does not return intent/confidence in the same format
-                intent = "rasa_webhook_processed"
-                confidence = 1.0
             else:
                 response_text = f"Rasa API error: {response.status_code}"
         except Exception as e:

@@ -26,7 +26,7 @@ ESCAPE_CONFIDENCE_THRESHOLD = 0.5
 LOOKUP_INTENTS = {"check_price", "event_schedule", "event_location"}
 
 _ANSWER_BUILDERS = {
-    "check_price": lambda t: f"{t['event']} costs ${t['price']:.2f}, with {t['available']} seats left.",
+    "check_price": lambda t: f"{t['event']} costs RM{t['price']:.2f}, with {t['available']} seats left.",
     "event_schedule": lambda t: f"{t['event']} is scheduled for {t['date']}.",
     "event_location": lambda t: f"{t['event']} is held at {t['venue']}.",
 }

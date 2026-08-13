@@ -1,7 +1,7 @@
 version: "3.1"
 
 stories:
-  - story: happy path booking
+  - story: happy path booking with confirmation
     steps:
       - intent: greet
       - action: utter_greet
@@ -10,6 +10,35 @@ stories:
       - action: ticket_booking_form
       - active_loop: ticket_booking_form
       - active_loop: null
+      - action: utter_ask_confirmation
+      - intent: confirm_booking
+      - action: action_submit_booking
+
+  - story: booking cancelled after confirmation
+    steps:
+      - intent: start_booking
+      - action: action_start_booking
+      - action: ticket_booking_form
+      - active_loop: ticket_booking_form
+      - active_loop: null
+      - action: utter_ask_confirmation
+      - intent: cancel_booking
+      - action: action_cancel_booking
+
+  - story: change event during quantity step
+    steps:
+      - intent: start_booking
+      - action: action_start_booking
+      - action: ticket_booking_form
+      - active_loop: ticket_booking_form
+      - intent: change_event
+      - action: action_cancel_booking
+      - action: action_start_booking
+      - action: ticket_booking_form
+      - active_loop: ticket_booking_form
+      - active_loop: null
+      - action: utter_ask_confirmation
+      - intent: confirm_booking
       - action: action_submit_booking
 
   - story: interruption example
@@ -23,4 +52,6 @@ stories:
       - action: ticket_booking_form
       - active_loop: ticket_booking_form
       - active_loop: null
+      - action: utter_ask_confirmation
+      - intent: confirm_booking
       - action: action_submit_booking

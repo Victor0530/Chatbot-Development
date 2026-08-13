@@ -7,12 +7,18 @@ intents:
   - inform
   - inform_ticket_query
   - query_events
+  - confirm_booking
+  - cancel_booking
+  - change_event
 
 entities:
   - event_name
   - ticket_quantity
   - timeframe
   - category
+  - date
+  - venue
+  - price
 
 slots:
   event_name:
@@ -35,6 +41,32 @@ slots:
         conditions:
           - active_loop: ticket_booking_form
             requested_slot: ticket_quantity
+  category:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: category
+  venue:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: venue
+  date:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: date
+      - type: from_entity
+        entity: timeframe
+  price:
+    type: text
+    influence_conversation: true
+    mappings:
+      - type: from_entity
+        entity: price
 
 forms:
   ticket_booking_form:
@@ -46,6 +78,7 @@ actions:
   - action_start_booking
   - action_search_tickets
   - action_submit_booking
+  - action_cancel_booking
   - validate_ticket_booking_form
 
 responses:
@@ -57,8 +90,12 @@ responses:
     - text: "Which event are you interested in?"
   utter_ask_ticket_quantity:
     - text: "How many tickets would you like to book?"
-  utter_submit:
-    - text: "Perfect! I have booked {ticket_quantity} tickets for {event_name}. You can view your tickets in your dashboard."
+  utter_ask_confirmation:
+    - text: "You're about to book {ticket_quantity} ticket(s) for {event_name}. Would you like to confirm?"
+  utter_booking_confirmed:
+    - text: "Perfect! I have booked {ticket_quantity} ticket(s) for {event_name}. You can view your tickets in your dashboard."
+  utter_booking_cancelled:
+    - text: "Booking cancelled. Let me know if you'd like to start over."
 
 session_config:
   session_expiration_time: 60

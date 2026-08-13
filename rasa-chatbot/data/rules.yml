@@ -16,7 +16,43 @@ rules:
       - active_loop: null
       - slot_was_set:
           - requested_slot: null
+      - action: utter_ask_confirmation
+
+  - rule: Confirm booking
+    steps:
+      - intent: confirm_booking
       - action: action_submit_booking
+
+  - rule: Cancel booking
+    steps:
+      - intent: cancel_booking
+      - action: action_cancel_booking
+
+  - rule: Cancel booking during form
+    condition:
+      - active_loop: ticket_booking_form
+    steps:
+      - intent: cancel_booking
+      - action: action_cancel_booking
+
+  - rule: Handle inform outside form
+    condition:
+      - active_loop: null
+    steps:
+      - intent: inform
+      - action: action_start_booking
+      - action: ticket_booking_form
+      - active_loop: ticket_booking_form
+
+  - rule: Change event during booking
+    condition:
+      - active_loop: ticket_booking_form
+    steps:
+      - intent: change_event
+      - action: action_cancel_booking
+      - action: action_start_booking
+      - action: ticket_booking_form
+      - active_loop: ticket_booking_form
 
   - rule: Handle event query during booking
     condition:

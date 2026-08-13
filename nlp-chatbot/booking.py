@@ -230,7 +230,7 @@ def _handle_event_name(
 
 def _event_details(ticket: dict) -> str:
     return (
-        f"{ticket['event']}: ${ticket['price']:.2f} per ticket, {ticket['available']} seats left, "
+        f"{ticket['event']}: RM{ticket['price']:.2f} per ticket, {ticket['available']} seats left, "
         f"on {ticket['date']} at {ticket['venue']}."
     )
 

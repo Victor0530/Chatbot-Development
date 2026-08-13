@@ -149,6 +149,15 @@ with st.sidebar:
         "Dialogflow": "dialogflow"
     }
     selected_bot = bot_map[bot_choice]
+
+    # Clear chat history when switching bots
+    if "previous_bot" not in st.session_state:
+        st.session_state["previous_bot"] = selected_bot
+
+    if st.session_state["previous_bot"] != selected_bot:
+        st.session_state["messages"] = []
+        st.session_state["session_id"] = str(uuid.uuid4())[:8]
+        st.session_state["previous_bot"] = selected_bot
     
     st.markdown("---")
     st.markdown("### Share Feedback")
@@ -187,7 +196,7 @@ with col1:
         <div class='ticket-card'>
             <div class='ticket-title'>Mock Concert A <span class='badge badge-music'>Music</span></div>
             <div class='ticket-meta'>Date: 2026-05-20 | Venue: Stadium XYZ | Available: 120</div>
-            <div class='ticket-price'>$150.00</div>
+            <div class='ticket-price'>RM150.00</div>
         </div>
         """, unsafe_allow_html=True)
     else:
@@ -204,7 +213,7 @@ with col1:
                 <div class='ticket-card'>
                     <div class='ticket-title'>{t['event']} <span class='badge badge-{category}'>{category}</span></div>
                     <div class='ticket-meta'>Date: {t['date']} | Venue: {t['venue']} | Available: {t['available']}</div>
-                    <div class='ticket-price'>${t['price']:.2f}</div>
+                    <div class='ticket-price'>RM{t['price']:.2f}</div>
                 </div>
                 """, unsafe_allow_html=True)
         except Exception as e:

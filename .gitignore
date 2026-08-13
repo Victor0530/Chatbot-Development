@@ -34,6 +34,7 @@ Thumbs.db
 # Documentation
 document.md
 AGENTS.md
+ROADMAP.md
 
 # Rasa-specific
 rasa-chatbot/models/
