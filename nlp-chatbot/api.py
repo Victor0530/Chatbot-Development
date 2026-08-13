@@ -82,9 +82,19 @@ def chat(payload: ChatIn):
         if answered is not None:
             response_text, intent = answered
         else:
-            lookup.start_session(session_id, intent)
+            # "which events are held at Grand Theater" also lands here (it
+            # shares "event"/"venue" vocabulary with the usual "where is the
+            # event held" phrasing) - the message names a venue, not an
+            # event, so answer the reverse lookup instead of asking "which
+            # event's location?" to a question that already named a venue.
+            venue_tickets = lookup.find_tickets_by_venue(message) if intent == "event_location" else []
+            if venue_tickets:
+                response_text = lookup.describe_events_at_venue(venue_tickets)
+                intent = "events_by_venue_answered"
+            else:
+                lookup.start_session(session_id, intent)
     elif intent == "list_events":
-        response_text = lookup.list_events()
+        response_text = lookup.list_events(message)
         booking.start_selection_session(session_id)
     elif intent in _NON_TICKET_INTENTS:
         continued = lookup.try_continue(session_id, message)
