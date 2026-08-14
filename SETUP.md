@@ -23,7 +23,7 @@ This project is fully containerized using Docker. This ensures that the environm
     - **Backend API:** `http://localhost:8000`
     - **Frontend UI:** `http://localhost:8501`
     - **Rasa Chatbot API:** `http://localhost:5005`
-    - **Action Server:** `http://localhost:5055` (Connected to Rasa via endpoints.yml)
+    - **Action Server:** Reachable only inside the Docker network (no host port mapping); Rasa connects to it via `endpoints.yml` (`http://actions:5055/webhook`).
     - **NLP (ML) Chatbot API:** `http://localhost:8600`
 
     *Important (First-time setup):* Because trained Rasa models are excluded from version control, you must train the model inside the container after starting the stack for the first time:
