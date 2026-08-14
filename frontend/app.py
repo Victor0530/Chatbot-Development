@@ -24,9 +24,101 @@ st.markdown("""
         font-family: 'Outfit', sans-serif;
     }
     
-    .main {
-        background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    /* Main app background */
+    [data-testid="stAppViewContainer"] {
+        background:
+            radial-gradient(1200px 800px at 80% -10%, rgba(99, 102, 241, 0.18), transparent 60%),
+            radial-gradient(1000px 700px at -10% 110%, rgba(192, 132, 252, 0.14), transparent 60%),
+            linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
         color: #f8fafc;
+    }
+    
+    [data-testid="stHeader"] {
+        background: transparent;
+    }
+    
+    /* Sidebar glass panel */
+    [data-testid="stSidebar"] {
+        background: rgba(15, 23, 42, 0.9);
+        border-right: 1px solid rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(10px);
+    }
+    
+    [data-testid="stSidebar"] .stMarkdown h3 {
+        color: #a5b4fc;
+    }
+    
+    /* Chat input */
+    [data-testid="stChatInput"] {
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(30, 41, 59, 0.9);
+    }
+    
+    [data-testid="stChatInput"]:focus-within {
+        border-color: #6366f1;
+        box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3);
+    }
+    
+    /* Chat scroll container panel */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 16px;
+        padding: 10px;
+    }
+    
+    /* Chat messages */
+    [data-testid="stChatMessage"] {
+        padding: 0;
+        margin-bottom: 10px;
+    }
+    
+    [data-testid="stChatMessageContent"] {
+        width: fit-content;
+        max-width: 85%;
+        flex-grow: 0;
+        margin: 0;
+        line-height: 1.5;
+        padding: 10px 14px;
+        border-radius: 16px;
+    }
+    
+    /* User message: bubble on the right */
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) {
+        flex-direction: row-reverse;
+        justify-content: flex-start;
+        background: transparent !important;
+    }
+    [data-testid="stChatMessageAvatarUser"] {
+        background: #22c55e !important;
+    }
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarUser"]) [data-testid="stChatMessageContent"] {
+        background: linear-gradient(135deg, #6366f1, #8b5cf6);
+        color: #ffffff;
+        border-bottom-right-radius: 4px;
+    }
+    
+    /* Bot message: bubble on the left */
+    [data-testid="stChatMessage"]:has([data-testid="stChatMessageAvatarAssistant"]) [data-testid="stChatMessageContent"] {
+        background: rgba(30, 41, 59, 0.95);
+        color: #f8fafc;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-left: 3px solid #6366f1;
+        border-bottom-left-radius: 4px;
+    }
+    
+    /* Intent pill */
+    .intent-pill {
+        display: inline-block;
+        margin-top: 6px;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        color: #a5b4fc;
+        background: rgba(99, 102, 241, 0.15);
+        border: 1px solid rgba(99, 102, 241, 0.35);
     }
     
     .title-gradient {
@@ -186,7 +278,7 @@ with st.sidebar:
             st.warning("Backend offline. Cannot save feedback.")
 
 # Display contents in a nice layout
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns([1, 2])
 
 with col1:
     st.markdown("### 🎟️ Event Tickets Catalog")
@@ -222,16 +314,23 @@ with col1:
 with col2:
     st.markdown(f"### 💬 Chat with {bot_choice} Bot")
     
-    # Container for scrollable chat
-    chat_container = st.container(height=400)
+    # Scrollable chat history container (tall enough to show plenty of history)
+    chat_container = st.container(height=600)
     
     with chat_container:
-        # Display previous chat history
         for msg in st.session_state["messages"]:
             with st.chat_message(msg["role"]):
-                st.write(msg["text"])
-                if "intent" in msg and msg["intent"]:
-                    st.caption(f"Intent detected: **{msg['intent']}** (Confidence: {msg['confidence']:.2%})")
+                if msg["role"] == "assistant":
+                    text = msg["text"]
+                    text = text.replace("\n\n", "\x00").replace("\n", "  \n").replace("\x00", "\n\n")
+                    st.write(text)
+                else:
+                    st.write(msg["text"])
+                if msg["role"] == "assistant" and "intent" in msg and msg["intent"]:
+                    st.markdown(
+                        f"<span class='intent-pill'>Intent: {msg['intent']} · {msg['confidence']:.1%}</span>",
+                        unsafe_allow_html=True,
+                    )
 
     # Input text box
     user_input = st.chat_input("Type a message to book tickets, check availability, or greet the bot...")
@@ -239,11 +338,6 @@ with col2:
     if user_input:
         # Append User message to history
         st.session_state["messages"].append({"role": "user", "text": user_input})
-        
-        # Display immediate user chat message
-        with chat_container:
-            with st.chat_message("user"):
-                st.write(user_input)
         
         # Send message to backend API
         bot_response = f"Could not connect to backend server at {BACKEND_URL}."
@@ -257,7 +351,7 @@ with col2:
                     "bot": selected_bot,
                     "session_id": st.session_state["session_id"]
                 }
-                res = requests.post(f"{BACKEND_URL}/api/chat", json=chat_payload)
+                res = requests.post(f"{BACKEND_URL}/api/chat", json=chat_payload, timeout=30)
                 if res.status_code == 200:
                     data = res.json()
                     bot_response = data["response"]
@@ -265,6 +359,24 @@ with col2:
                     confidence = data.get("confidence")
             except Exception as e:
                 bot_response = f"API Error: {e}"
+        else:
+            # The sidebar check may be stale; always try the chat endpoint anyway.
+            try:
+                chat_payload = {
+                    "message": user_input,
+                    "bot": selected_bot,
+                    "session_id": st.session_state["session_id"]
+                }
+                res = requests.post(f"{BACKEND_URL}/api/chat", json=chat_payload, timeout=30)
+                if res.status_code == 200:
+                    data = res.json()
+                    bot_response = data["response"]
+                    intent = data.get("intent")
+                    confidence = data.get("confidence")
+                else:
+                    bot_response = f"Backend API error: {res.status_code}"
+            except Exception as e:
+                bot_response = f"Could not connect to backend server at {BACKEND_URL}."
         
         # Append Bot message to history
         st.session_state["messages"].append({

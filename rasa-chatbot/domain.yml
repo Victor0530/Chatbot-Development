@@ -73,6 +73,12 @@ forms:
     required_slots:
       - event_name
       - ticket_quantity
+    ignored_intents:
+      - cancel_booking
+      - change_event
+      - query_events
+      - goodbye
+      - start_booking
 
 actions:
   - action_start_booking

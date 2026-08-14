@@ -68,7 +68,7 @@ def chat_endpoint(payload: ChatRequest):
             if response.status_code == 200:
                 data = response.json()
                 if data:
-                    response_text = " ".join([msg.get("text", "") for msg in data])
+                    response_text = "\n\n".join([msg.get("text", "") for msg in data])
                 else:
                     if any(keyword in message.lower() for keyword in ["buy", "ticket", "book", "hi", "hello"]):
                         response_text = "Which event are you interested in?"

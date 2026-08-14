@@ -22,7 +22,7 @@ class ActionStartBooking(Action):
     def run(self, dispatcher: CollectingDispatcher,
             tracker: Tracker,
             domain: Dict[Text, Any]) -> List[Dict[Text, Any]]:
-        return [SlotSet("event_name", None), SlotSet("ticket_quantity", None)]
+        return [SlotSet("event_name", None), SlotSet("ticket_quantity", None), SlotSet("requested_slot", None)]
 
 class ActionCancelBooking(Action):
     def name(self) -> Text:
@@ -34,7 +34,7 @@ class ActionCancelBooking(Action):
         
         dispatcher.utter_message(text="Booking cancelled. Let me know if you'd like to start over.")
         
-        return [ActiveLoop(None), SlotSet("event_name", None), SlotSet("ticket_quantity", None)]
+        return [ActiveLoop(None), SlotSet("event_name", None), SlotSet("ticket_quantity", None), SlotSet("requested_slot", None)]
 
 class ActionSearchTickets(Action):
     def name(self) -> Text:
@@ -101,11 +101,19 @@ class ActionSearchTickets(Action):
             date_pattern = f"2026-{date}" if len(date) == 2 and date.isdigit() else date
             query["date"] = {"$regex": date_pattern, "$options": "i"}
         
+        def format_ticket(t):
+            return (
+                f"{t['event']}\n"
+                f"   Category: {t['category'].capitalize()}\n"
+                f"   Date: {t['date']} @ {t['venue']}\n"
+                f"   Price: RM{t['price']:.2f} | Available: {t['available']} seats"
+            )
+
         # Check for seat/availability query extremes
         if "most" in latest_message and ("seat" in latest_message or "available" in latest_message):
             ticket = db.tickets.find_one(sort=[("available", -1)])
             if ticket:
-                dispatcher.utter_message(text=f"The event with the most available seats is {ticket['event']} at {ticket['venue']} with {ticket['available']} seats left (RM{ticket['price']}).")
+                dispatcher.utter_message(text="Event with the most available seats: " + format_ticket(ticket))
             else:
                 dispatcher.utter_message(text="No events found.")
             return []
@@ -113,7 +121,7 @@ class ActionSearchTickets(Action):
         if "least" in latest_message and ("seat" in latest_message or "available" in latest_message):
             ticket = db.tickets.find_one(sort=[("available", 1)])
             if ticket:
-                dispatcher.utter_message(text=f"The event with the least available seats is {ticket['event']} at {ticket['venue']} with {ticket['available']} seats left (RM{ticket['price']}).")
+                dispatcher.utter_message(text="Event with the least available seats: " + format_ticket(ticket))
             else:
                 dispatcher.utter_message(text="No events found.")
             return []
@@ -126,12 +134,12 @@ class ActionSearchTickets(Action):
             
         if len(tickets) == 1:
             t = tickets[0]
-            dispatcher.utter_message(text=f"Found: {t['event']} | Genre: {t['category'].capitalize()} | Date: {t['date']} | Venue: {t['venue']} | Price: RM{t['price']:.2f} | Available Seats: {t['available']}")
+            dispatcher.utter_message(text="Found: " + format_ticket(t))
         else:
             lines = []
             for t in tickets:
-                lines.append(f"• {t['event']} ({t['category'].capitalize()}) - Date: {t['date']} @ {t['venue']} | RM{t['price']:.2f} | {t['available']} seats left")
-            dispatcher.utter_message(text="Here are the matching events:\n" + "\n".join(lines))
+                lines.append(format_ticket(t))
+            dispatcher.utter_message(text="Here are the matching events:\n" + "\n\n".join(lines))
             
         return []
 
