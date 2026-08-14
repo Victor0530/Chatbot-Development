@@ -22,6 +22,38 @@ FALLBACK_RESPONSES = [
     "I'm not sure I follow - could you tell me more about what you need (booking, price, schedule, etc.)?",
 ]
 
+# Bar a message's remainder (after stripping a leading "Hi,"/"Hello there,")
+# must clear before that remainder's intent overrides a plain "greeting"
+# read of the full message. Deliberately higher than CONFIDENCE_THRESHOLD
+# (0.2, "trust the classifier's best guess over no guess at all"): several
+# greeting training patterns are themselves greeting-plus-vague-followup
+# ("hi, i have a question about an event"), so a weak/ambiguous guess on the
+# remainder shouldn't override that - only a confident, clearly-different
+# intent should. Same reasoning as booking.py's ESCAPE_CONFIDENCE_THRESHOLD.
+GREETING_OVERRIDE_CONFIDENCE_THRESHOLD = 0.5
+
+# Matches a leading greeting opener so it can be stripped off and the rest
+# of the message classified on its own merits - see resolve_intent(). Kept
+# to the greeting intent's own single-word/short openers (data/intents.json)
+# rather than its longer "greeting + vague followup" patterns, since those
+# longer ones are exactly the case that should keep resolving as "greeting".
+_GREETING_PREFIX_RE = re.compile(
+    r"^(hi+|hello|hey+|hiya|howdy|greetings?|good\s+(morning|afternoon|evening))\b[\s,!.]*",
+    re.IGNORECASE,
+)
+
+
+def strip_greeting_prefix(message: str) -> str | None:
+    """The remainder of `message` after a leading greeting phrase ("Hi,",
+    "Hello there -"), or None if there's no such prefix or nothing
+    meaningful follows it (a bare "Hello" should still resolve as its own
+    greeting intent, not an override with nothing to override to)."""
+    match = _GREETING_PREFIX_RE.match(message.strip())
+    if not match:
+        return None
+    remainder = message[match.end():].strip(" ,.-!?")
+    return remainder or None
+
 # Chapter 11 (IF-THEN rule-based reasoning): fixed exact-match overrides for
 # short, low-vocabulary phrasings that the classifier keeps getting wrong even
 # after adding more training patterns for them. These clean down to just one or two
@@ -169,6 +201,17 @@ class ChatBot:
             and _refers_to_a_specific_event(normalized)
         ):
             return "event_schedule", 1.0
+
+        remainder = strip_greeting_prefix(message)
+        if remainder is not None:
+            tag, confidence = self.resolve_intent(remainder)
+            if (
+                tag is not None
+                and tag != "greeting"
+                and confidence >= GREETING_OVERRIDE_CONFIDENCE_THRESHOLD
+            ):
+                return tag, confidence
+
         return self.predict_intent(message)
 
     def get_response(self, message: str) -> str:
