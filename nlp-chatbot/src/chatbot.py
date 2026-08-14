@@ -6,9 +6,11 @@ certainty-factor idea (reject any conclusion below a belief threshold).
 """
 import difflib
 import random
+import re
 from pathlib import Path
 
 import joblib
+from nltk import pos_tag, word_tokenize
 
 from src.dataset import build_response_map, load_intents
 from src.preprocessing import preprocess
@@ -57,7 +59,57 @@ RULE_OVERRIDES = {
     # cleans down to just "what" - indistinguishable from bot_capabilities'
     # "what can you do" without this override.
     "what's on": "list_events",
+    # cleans down to just "help", a token shared with several bot_capabilities
+    # patterns ("how can you help me", "what can you help me with") - with no
+    # other context to disambiguate, the classifier leans bot_capabilities.
+    "that helps": "thanks",
+    # "question" also appears in goodbye's "no more questions" pattern, close
+    # enough in this small a training set to outweigh "thanks" itself.
+    "thanks, that answers my question": "thanks",
+    # cleans down to "how secure seat" - "how" is heavily shared with
+    # bot_capabilities patterns ("how can you help me", "how do you work"),
+    # which outweighs "secure"/"seat" despite them being the real signal.
+    "how do i secure my seat": "book_ticket",
 }
+
+# "is the event this weekend" (event_schedule) and "are there any events
+# this weekend" (list_events) both reduce to the identical bag-of-words
+# ("event weekend") after preprocessing strips "is"/"the"/"any"/"this" as
+# stopwords - no amount of training data can teach a linear classifier to
+# separate two identical feature vectors. The distinguishing signal is
+# syntactic (a definite/demonstrative determiner directly on a singular
+# noun, "the event", vs. an indefinite/plural phrasing, "any events"), which
+# only POS tags still carry once the raw words are gone. Scoped to the
+# specific words that actually collide with list_events' timeframe patterns
+# (see lookup.py's find_tickets_by_timeframe) - "when is the event" doesn't
+# need this, the classifier already gets that right on its own.
+_DEFINITE_DETERMINERS = {"the", "this", "that"}
+# "this weekend"/"this month" are themselves a determiner directly on a
+# singular noun ("this" + NN "weekend") - structurally indistinguishable
+# from "the event" by POS tag alone. Excluded here so the timeframe word
+# itself never counts as the "specific event" being referred to; only a
+# *different* singular noun after the determiner does.
+_TIME_NOUNS = {"weekend", "today", "tomorrow", "week", "month"}
+_SCHEDULE_COLLISION_WORDS_RE = re.compile(
+    r"\b(weekend|today|tomorrow|this week|next week|this month|next month)\b"
+)
+# Guards against the rarer sentence that also names "the event" + one of the
+# words above but is actually asking about location or price, not timing.
+_COMPETING_SIGNAL_WORDS_RE = re.compile(
+    r"\b(where|venue|located|held|price|cost|rm|expensive|cheap)\b"
+)
+
+
+def _refers_to_a_specific_event(normalized: str) -> bool:
+    """Whether `normalized` has a definite/demonstrative determiner directly
+    in front of a singular noun that isn't itself a timeframe word ("the
+    event", "this show", but not "this weekend") - see the RULE_OVERRIDES
+    comment above this for why."""
+    tags = pos_tag(word_tokenize(normalized))
+    return any(
+        word in _DEFINITE_DETERMINERS and next_tag == "NN" and next_word not in _TIME_NOUNS
+        for (word, _tag), (next_word, next_tag) in zip(tags, tags[1:])
+    )
 
 
 class ChatBot:
@@ -111,6 +163,12 @@ class ChatBot:
         normalized = message.lower().strip().strip("?!.")
         if normalized in RULE_OVERRIDES:
             return RULE_OVERRIDES[normalized], 1.0
+        if (
+            _SCHEDULE_COLLISION_WORDS_RE.search(normalized)
+            and not _COMPETING_SIGNAL_WORDS_RE.search(normalized)
+            and _refers_to_a_specific_event(normalized)
+        ):
+            return "event_schedule", 1.0
         return self.predict_intent(message)
 
     def get_response(self, message: str) -> str:

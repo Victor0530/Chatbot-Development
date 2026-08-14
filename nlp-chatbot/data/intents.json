@@ -31,8 +31,8 @@
         "what's your purpose", "what kind of assistant are you"
       ],
       "responses": [
-        "I'm the event ticketing assistant. You can ask me about bookings, prices, schedules, venues, payment methods, and our refund policy.",
-        "I can help with ticket-related questions — booking, pricing, schedules, locations, payment methods, and our refund policy. What would you like to know?"
+        "I'm the event ticketing assistant. You can ask me about bookings, prices, schedules, and venues.",
+        "I can help with ticket-related questions — booking, pricing, schedules, and locations. What would you like to know?"
       ]
     },
     {
@@ -45,7 +45,17 @@
         "what tickets are available", "what event options are there", "what events can i book",
         "tell me the available events", "which events are on offer", "what's happening this week",
         "list of upcoming events", "what events do you offer", "what events are running",
-        "can you show me a list of events", "what events are currently open for booking"
+        "can you show me a list of events", "what events are currently open for booking",
+        "what music events do you have", "show me sports events", "list the comedy events",
+        "what theater shows are on", "are there any music events", "what sports events can i book",
+        "what events are under rm100", "show me events cheaper than rm50",
+        "what tickets are over rm150", "any events below rm80", "what events are at least rm100",
+        "what's on june 15", "what events are on august 1", "any events on 2026-07-10",
+        "what's happening on july 10th", "what's on tomorrow", "any events this weekend",
+        "what's happening this month", "what events are next month", "anything on today",
+        "what events are happening next week", "what events are on this weekend",
+        "are there any events this weekend", "which events are happening this weekend",
+        "what's on this weekend", "is anything happening this weekend"
       ],
       "responses": [
         "We currently have several events open for booking: concerts, workshops, seminars, the graduation ceremony, and football matches. Which one would you like to know more about?",
@@ -76,7 +86,10 @@
         "perfect thank you", "thanks for your help", "cheers", "thank you very much",
         "that's helpful thanks", "awesome thanks", "cool thanks",
         "thanks so much for the info", "that was really helpful", "thank you, appreciate the help",
-        "cheers for that", "thanks, that answers my question"
+        "cheers for that", "thanks, that answers my question",
+        "thank you for your help today", "thanks a bunch", "really appreciate the quick answer",
+        "thanks, i got what i needed", "you've been really helpful, thanks", "thanks for clearing that up",
+        "thank you for the information"
       ],
       "responses": [
         "You're welcome!",
@@ -136,7 +149,10 @@
         "what's the price range for seats", "how much does the workshop cost",
         "price of general admission tickets", "how much is a vip pass",
         "what's the ticket price for the concert", "cost breakdown for tickets",
-        "how much would 2 tickets cost", "is there a group discount"
+        "how much would 2 tickets cost", "is there a group discount",
+        "what's the price of a general ticket", "how much does a seminar ticket cost", "what's the entry cost for the concert",
+        "can you tell me the ticket price", "how much are tickets for the football match", "what's the going rate for a ticket",
+        "is there a discount for early booking", "how much do i need to pay for a ticket"
       ],
       "responses": [
         "Ticket prices vary by event. Which event would you like the price for?",
@@ -153,7 +169,10 @@
         "what date is the football match", "when does registration open",
         "what time should i arrive", "is there a program schedule", "when does the event end",
         "when is the event scheduled for", "what's the timetable for the festival",
-        "when do doors open", "what time is the keynote speech", "is the event this weekend"
+        "when do doors open", "what time is the keynote speech", "is the event this weekend",
+        "what time does the seminar start", "when does the workshop end", "what's the start time for the concert",
+        "can you confirm the event date", "when exactly does the show begin", "what time does registration close",
+        "is the concert happening today", "what time does the football match start", "when is the workshop scheduled"
       ],
       "responses": [
         "Please tell me which event you're asking about and I will check the schedule.",
@@ -179,39 +198,6 @@
       "responses": [
         "Let me know the event name and I will tell you the venue.",
         "Which event's location are you asking about?"
-      ]
-    },
-    {
-      "tag": "payment_methods",
-      "patterns": [
-        "what payment methods do you accept", "can i pay with credit card",
-        "do you accept online banking", "how can i pay for my ticket",
-        "do you accept debit card", "can i pay with paypal", "is e-wallet payment available",
-        "what payment options are there", "can i pay by fpx", "do you take cash payments",
-        "can i pay using touch n go", "is grabpay accepted", "how do i pay online",
-        "what forms of payment can i use", "can i pay in installments",
-        "do you accept visa or mastercard", "is there a payment gateway"
-      ],
-      "responses": [
-        "We accept credit/debit cards, online banking, and e-wallets.",
-        "You can pay via card, FPX online banking, or e-wallet at checkout."
-      ]
-    },
-    {
-      "tag": "refund_policy",
-      "patterns": [
-        "what is the refund policy", "can i get a refund", "how do refunds work",
-        "will i get my money back if i cancel",
-        "how long does a refund take", "am i eligible for a refund", "what's your cancellation policy",
-        "can i get a full refund", "how much is the refund processing fee",
-        "is my ticket refundable", "what happens if the event is cancelled, do i get a refund",
-        "can i get my money back after cancelling", "how do i request a refund",
-        "what's the deadline for requesting a refund", "do you refund service fees",
-        "can i get a partial refund"
-      ],
-      "responses": [
-        "Our policy: refunds are available up to 7 days before the event, minus a processing fee. This assistant can't submit the request for you yet — please contact support to actually get a refund.",
-        "You're eligible for a refund if you request it at least 7 days before the event date, but please contact support directly since this assistant can't process it yet."
       ]
     }
   ]
