@@ -176,9 +176,16 @@ def _word_match(needle: str, haystack: str) -> bool:
 
 def _matching_tickets(db, text: str) -> list[dict]:
     """All tickets whose event name is referenced in `text`, either as a
-    short reply ("Concert A", "broadway") or embedded in a full sentence
-    ("what's the price of Broadway Musical"). Matches in both directions so
-    both styles work, but only on whole-word/phrase boundaries. Messages
+    short reply ("Concert A", "Pop Night", "broadway") or embedded in a full
+    sentence ("what's the price of Broadway Musical", "what's the price for
+    Pop Night?"). Matches in both directions so both styles work, but only
+    on whole-word/phrase boundaries. Checks the part before *and* after the
+    " - " separator on its own ("Concert A" / "Pop Night" for "Concert A -
+    Pop Night") - matching only the text-within-event direction for the
+    full name would otherwise miss the subtitle half whenever it's embedded
+    in a longer sentence rather than sent standalone (a standalone "Pop
+    Night" happens to also satisfy the reverse, text-contained-in-event
+    check, which is why only the prefix half seemed to need this). Messages
     under 3 chars are skipped to avoid trivial false positives (e.g. "at"
     matching nothing sensible). Can return more than one ticket when the
     text is genuinely ambiguous (e.g. "concert" matches both Concert A and
@@ -190,9 +197,10 @@ def _matching_tickets(db, text: str) -> list[dict]:
     matches = []
     for t in db.tickets.find():
         event_lower = t["event"].lower()
-        short_lower = t["event"].split(" - ")[0].lower()
+        prefix_lower, _, suffix_lower = t["event"].lower().partition(" - ")
         if (
-            _word_match(short_lower, text_lower)
+            _word_match(prefix_lower, text_lower)
+            or (suffix_lower and _word_match(suffix_lower, text_lower))
             or _word_match(event_lower, text_lower)
             or _word_match(text_lower, event_lower)
         ):
