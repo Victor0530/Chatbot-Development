@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 import booking
 import lookup
-from src.chatbot import ChatBot
+from src.chatbot import ChatBot, strip_greeting_prefix
 
 app = FastAPI(title="NLP (ML) Chatbot API", version="1.0")
 
@@ -21,6 +21,13 @@ _chatbot: ChatBot | None = None
 # misclassification than an actual topic change - lookup.try_continue()
 # reuses the session's last lookup intent instead.
 _NON_TICKET_INTENTS = {None, "greeting", "bot_capabilities", "thanks", "goodbye"}
+
+# Intents whose canned response is already apologetic/declining
+# (cancel_ticket's "Sorry, this assistant can't process cancellations
+# yet...") - prepending a cheerful "Hi there!" to those reads as tonally
+# contradictory, so the greeting-prefix cosmetic below skips them even when
+# the message did open with a greeting.
+_APOLOGETIC_INTENTS = {"cancel_ticket"}
 
 
 class ChatIn(BaseModel):
@@ -72,15 +79,26 @@ def chat(payload: ChatIn):
 
     response_text = _chatbot.get_response(message)
 
+    # In several branches below, `intent` gets reassigned to a label a
+    # deterministic DB-lookup/state-machine function produced instead of the
+    # classifier's original tag (e.g. "book_ticket" ->
+    # "book_ticket_awaiting_quantity", "check_price" -> "check_price_answered").
+    # `confidence` is reset to 1.0 alongside each such reassignment, for the
+    # same reason the mid-session path above already returns 1.0: once the
+    # reply comes from a confirmed DB match rather than the classifier's
+    # guess, the classifier's original confidence on the raw message no
+    # longer describes what's actually being returned.
     if intent == "book_ticket":
         carried_event = lookup.get_last_event(session_id) or lookup.find_event_in_message(message)
         started = booking.start_session(session_id, carried_event, message)
         if started is not None:
             response_text, intent = started
+            confidence = 1.0
     elif intent in lookup.LOOKUP_INTENTS:
         answered = lookup.try_answer(session_id, intent, message)
         if answered is not None:
             response_text, intent = answered
+            confidence = 1.0
         else:
             # "which events are held at Grand Theater" also lands here (it
             # shares "event"/"venue" vocabulary with the usual "where is the
@@ -91,6 +109,7 @@ def chat(payload: ChatIn):
             if venue_tickets:
                 response_text = lookup.describe_events_at_venue(venue_tickets)
                 intent = "events_by_venue_answered"
+                confidence = 1.0
             else:
                 lookup.start_session(session_id, intent)
     elif intent == "list_events":
@@ -100,5 +119,21 @@ def chat(payload: ChatIn):
         continued = lookup.try_continue(session_id, message)
         if continued is not None:
             response_text, intent = continued
+            confidence = 1.0
+
+    # A leading "Hi,"/"Hello there," on an otherwise substantive message
+    # (e.g. "Hi, what events do you have") stays polite without letting the
+    # greeting hijack the whole reply the way it used to: resolve_intent()
+    # already routes on the *substantive* intent, so this just prepends an
+    # acknowledgement rather than answering with a bare greeting instead of
+    # the actual request. Skipped when intent is "greeting" itself - a bare
+    # "Hello" already gets its own greeting response, no need to double it -
+    # and skipped for _APOLOGETIC_INTENTS for the tonal-clash reason above.
+    if (
+        intent != "greeting"
+        and intent not in _APOLOGETIC_INTENTS
+        and strip_greeting_prefix(message) is not None
+    ):
+        response_text = f"Hi there! {response_text}"
 
     return ChatOut(response=response_text, intent=intent, confidence=confidence)
