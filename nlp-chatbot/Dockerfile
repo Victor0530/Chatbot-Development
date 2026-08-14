@@ -6,7 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 ENV NLTK_DATA=/usr/local/share/nltk_data
-RUN python -m nltk.downloader -d $NLTK_DATA punkt punkt_tab stopwords wordnet omw-1.4
+RUN python -m nltk.downloader -d $NLTK_DATA punkt punkt_tab stopwords wordnet omw-1.4 averaged_perceptron_tagger_eng
 
 COPY . .
 CMD ["uvicorn", "api:app", "--host", "0.0.0.0", "--port", "8600"]

@@ -5,6 +5,8 @@ Mirrors booking.py's session pattern, but simpler - there's only ever one
 pending question (the event name), so a session is just the intent tag
 waiting on an answer rather than a multi-state machine.
 """
+import calendar
+import datetime
 import os
 import re
 from typing import Optional
@@ -84,15 +86,34 @@ def _get_db():
 def list_events(message: str = "") -> str:
     """Build a live list of bookable events from the tickets collection. If
     `message` narrows that down - a venue ("what events are at Grand
-    Theater"), a month ("what's on in July"), or a popularity question
-    ("what's the most popular event") - answer that instead of dumping the
-    full list. The classifier routes all of these to list_events too, since
-    bag-of-words can't tell "what events are available" apart from "what
-    events are at X"/"in July"/"most popular"."""
+    Theater"), a category ("what music events do you have"), a price
+    threshold ("events under RM100"), a specific date ("what's on June 15"),
+    a relative timeframe ("what's happening this weekend"), a month ("what's
+    on in July"), or a popularity question ("what's the most popular
+    event") - answer that instead of dumping the full list. The classifier
+    routes all of these to list_events too, since bag-of-words can't tell
+    "what events are available" apart from "what events are at X"/"under
+    RM100"/"in July"/"most popular"."""
     if message:
         venue_tickets = find_tickets_by_venue(message)
         if venue_tickets:
             return describe_events_at_venue(venue_tickets)
+
+        category_tickets = find_tickets_by_category(message)
+        if category_tickets is not None:
+            return describe_events_in_category(message, category_tickets)
+
+        price_tickets = find_tickets_by_price(message)
+        if price_tickets is not None:
+            return describe_events_by_price(message, price_tickets)
+
+        date_tickets = find_tickets_by_date(message)
+        if date_tickets is not None:
+            return describe_events_on_date(message, date_tickets)
+
+        timeframe_tickets = find_tickets_by_timeframe(message)
+        if timeframe_tickets is not None:
+            return describe_events_in_timeframe(message, timeframe_tickets)
 
         month_tickets = find_tickets_by_month(message)
         if month_tickets is not None:
@@ -239,6 +260,100 @@ def describe_events_at_venue(tickets: list[dict]) -> str:
     return f"The following events are at {venue}: {names}."
 
 
+_CATEGORIES = ("music", "sports", "theater", "comedy")
+
+
+def _find_category_in_message(text: str) -> Optional[str]:
+    text_lower = text.lower()
+    for category in _CATEGORIES:
+        if _word_match(category, text_lower):
+            return category
+    if _word_match("theatre", text_lower):
+        return "theater"
+    return None
+
+
+def find_tickets_by_category(message: str) -> Optional[list[dict]]:
+    """Tickets whose category is named in `message` ("what music events do
+    you have"). Returns None if no category is named at all - distinct from
+    an empty list, which means a category was named but nothing is
+    scheduled in it."""
+    category = _find_category_in_message(message)
+    if category is None:
+        return None
+    db = _get_db()
+    if db is None:
+        return []
+    try:
+        return [t for t in db.tickets.find() if t.get("category") == category]
+    except PyMongoError:
+        return []
+
+
+def describe_events_in_category(message: str, tickets: list[dict]) -> str:
+    """Format a find_tickets_by_category() result. `message` is re-scanned
+    for the category name rather than threading it through, same as
+    describe_events_in_month()."""
+    category = _find_category_in_message(message)
+    if not tickets:
+        return f"There are no {category} events scheduled right now."
+    names = ", ".join(t["event"] for t in tickets)
+    return f"Here are the {category} events: {names}."
+
+
+# Only "RM<amount>" is recognized (matches the standardized entity's expected
+# format, e.g. "RM50") - a bare number is too easy to confuse with a ticket
+# quantity or some other digit in the sentence.
+_PRICE_RE = re.compile(r"\brm\s?(\d+(?:\.\d{1,2})?)\b")
+_UNDER_WORDS = ("under", "below", "less than", "cheaper than", "no more than", "at most", "within", "up to")
+_OVER_WORDS = ("over", "above", "more than", "at least", "starting from")
+
+
+def _find_price_in_message(text: str) -> Optional[float]:
+    match = _PRICE_RE.search(text.lower())
+    return float(match.group(1)) if match else None
+
+
+def _price_direction(text: str) -> Optional[str]:
+    text_lower = text.lower()
+    if any(w in text_lower for w in _UNDER_WORDS):
+        return "under"
+    if any(w in text_lower for w in _OVER_WORDS):
+        return "over"
+    return None
+
+
+def find_tickets_by_price(message: str) -> Optional[list[dict]]:
+    """Tickets priced under/over the RM amount named in `message` ("events
+    under RM100"). Requires both a price and a comparison direction word -
+    an amount alone is too ambiguous to guess a direction for. Returns None
+    if either is missing, distinct from an empty list (a threshold was
+    given but nothing qualifies)."""
+    price = _find_price_in_message(message)
+    direction = _price_direction(message)
+    if price is None or direction is None:
+        return None
+    db = _get_db()
+    if db is None:
+        return []
+    try:
+        tickets = list(db.tickets.find())
+    except PyMongoError:
+        return []
+    if direction == "under":
+        return [t for t in tickets if t["price"] <= price]
+    return [t for t in tickets if t["price"] >= price]
+
+
+def describe_events_by_price(message: str, tickets: list[dict]) -> str:
+    price = _find_price_in_message(message)
+    direction = _price_direction(message)
+    if not tickets:
+        return f"There are no events priced {direction} RM{price:.2f}."
+    names = ", ".join(f"{t['event']} (RM{t['price']:.2f})" for t in tickets)
+    return f"Events priced {direction} RM{price:.2f}: {names}."
+
+
 # "may" the month and "may" the modal verb ("may I...", "that may help")
 # are the same token once lowercased, so a plain word match on "may" turns
 # ordinary polite phrasing into a false month match. Only trust it when
@@ -249,8 +364,11 @@ _AMBIGUOUS_MONTH_WORDS = {"may"}
 _MONTH_CONTEXT_PREPOSITIONS = ("in", "during", "for", "on", "by")
 
 
-def _find_month_in_message(text: str) -> Optional[int]:
-    text_lower = text.lower()
+def _find_month_match(text_lower: str):
+    """The regex Match for the month name found in `text_lower`, plus its
+    numeric value - exposed (not just the int) so _parse_specific_date can
+    anchor its day search to where the month was actually found, rather
+    than scanning the whole message."""
     for name, num in _MONTH_NAMES.items():
         match = re.search(rf"\b{re.escape(name)}\b", text_lower)
         if not match:
@@ -259,8 +377,13 @@ def _find_month_in_message(text: str) -> Optional[int]:
             prefix = text_lower[:match.start()].rstrip()
             if not prefix.endswith(_MONTH_CONTEXT_PREPOSITIONS):
                 continue
-        return num
-    return None
+        return match, num
+    return None, None
+
+
+def _find_month_in_message(text: str) -> Optional[int]:
+    _, num = _find_month_match(text.lower())
+    return num
 
 
 def _ticket_month(t: dict) -> Optional[int]:
@@ -297,6 +420,151 @@ def describe_events_in_month(message: str, tickets: list[dict]) -> str:
         return f"There are no events scheduled in {name}."
     names = ", ".join(t["event"] for t in tickets)
     return f"In {name}, we have: {names}."
+
+
+_ISO_DATE_RE = re.compile(r"\b(\d{4})-(\d{1,2})-(\d{1,2})\b")
+_DAY_RE = re.compile(r"\b([1-9]|[12]\d|3[01])(?:st|nd|rd|th)?\b")
+
+
+def _parse_specific_date(text: str) -> Optional[tuple[Optional[int], int, int]]:
+    """(year, month, day) named in `text`, either ISO ("2026-06-15") or
+    "<Month> <day>" ("June 15"), or None if no specific date is named.
+    `year` is None for the "<Month> <day>" form - callers then match on
+    month/day alone, regardless of year, since the dataset's events don't
+    all necessarily share one year."""
+    text_lower = text.lower()
+    iso = _ISO_DATE_RE.search(text_lower)
+    if iso:
+        year, month, day = int(iso.group(1)), int(iso.group(2)), int(iso.group(3))
+        if 1 <= month <= 12 and 1 <= day <= 31:
+            return year, month, day
+    month_match, month = _find_month_match(text_lower)
+    if month is None:
+        return None
+    # Only look for the day right around the month name, not anywhere in the
+    # message - an earlier unrelated number (e.g. a ticket quantity) would
+    # otherwise be misread as the day.
+    window_start = max(0, month_match.start() - 15)
+    window_end = min(len(text_lower), month_match.end() + 15)
+    day_match = _DAY_RE.search(text_lower[window_start:window_end])
+    if not day_match:
+        return None
+    return None, month, int(day_match.group(1))
+
+
+def find_tickets_by_date(message: str) -> Optional[list[dict]]:
+    """Tickets on the specific calendar date named in `message` - distinct
+    from find_tickets_by_month/find_tickets_by_timeframe, which match a
+    whole month or relative range rather than one exact day. Returns None
+    if no specific date is named at all."""
+    parsed = _parse_specific_date(message)
+    if parsed is None:
+        return None
+    year, month, day = parsed
+    db = _get_db()
+    if db is None:
+        return []
+    try:
+        tickets = list(db.tickets.find())
+    except PyMongoError:
+        return []
+    matches = []
+    for t in tickets:
+        try:
+            t_year, t_month, t_day = (int(p) for p in t["date"].split("-"))
+        except (KeyError, ValueError):
+            continue
+        if t_month == month and t_day == day and (year is None or year == t_year):
+            matches.append(t)
+    return matches
+
+
+def describe_events_on_date(message: str, tickets: list[dict]) -> str:
+    parsed = _parse_specific_date(message)
+    label = message.strip()
+    if parsed:
+        _, month, day = parsed
+        label = f"{_MONTH_DISPLAY[month]} {day}"
+    if not tickets:
+        return f"There are no events scheduled on {label}."
+    names = ", ".join(t["event"] for t in tickets)
+    return f"On {label}, we have: {names}."
+
+
+def _timeframe_range(text: str) -> Optional[tuple[datetime.date, datetime.date, str]]:
+    """(start_date, end_date, label) for the relative timeframe phrase named
+    in `text` ("tomorrow", "this weekend", "next month"...), computed from
+    the real current date - unlike find_tickets_by_month, which matches a
+    literal month name regardless of year. Checked most-specific phrase
+    first: "this weekend" is a plain substring of "this week" once "weekend"
+    is un-split ("this week" + "end"), so it must be checked before the
+    "this week" branch or every weekend question would be misread as a
+    whole-week one."""
+    text_lower = text.lower()
+    today = datetime.date.today()
+    if _word_match("tomorrow", text_lower):
+        d = today + datetime.timedelta(days=1)
+        return d, d, "tomorrow"
+    if "this weekend" in text_lower:
+        days_to_sat = (5 - today.weekday()) % 7
+        sat = today + datetime.timedelta(days=days_to_sat)
+        sun = sat + datetime.timedelta(days=1)
+        return sat, sun, "this weekend"
+    if "next week" in text_lower:
+        start = today + datetime.timedelta(days=7 - today.weekday())
+        end = start + datetime.timedelta(days=6)
+        return start, end, "next week"
+    if "this week" in text_lower:
+        start = today - datetime.timedelta(days=today.weekday())
+        end = start + datetime.timedelta(days=6)
+        return start, end, "this week"
+    if "next month" in text_lower:
+        year, month = today.year, today.month + 1
+        if month > 12:
+            year, month = year + 1, 1
+        end_day = calendar.monthrange(year, month)[1]
+        return datetime.date(year, month, 1), datetime.date(year, month, end_day), "next month"
+    if "this month" in text_lower:
+        end_day = calendar.monthrange(today.year, today.month)[1]
+        return today.replace(day=1), today.replace(day=end_day), "this month"
+    if _word_match("today", text_lower):
+        return today, today, "today"
+    return None
+
+
+def find_tickets_by_timeframe(message: str) -> Optional[list[dict]]:
+    """Tickets falling within the relative date range named in `message`
+    ("what's on tomorrow", "any events this weekend"). Returns None if no
+    relative timeframe phrase is named at all."""
+    result = _timeframe_range(message)
+    if result is None:
+        return None
+    start, end, _label = result
+    db = _get_db()
+    if db is None:
+        return []
+    try:
+        tickets = list(db.tickets.find())
+    except PyMongoError:
+        return []
+    matches = []
+    for t in tickets:
+        try:
+            t_date = datetime.date.fromisoformat(t["date"])
+        except (KeyError, ValueError):
+            continue
+        if start <= t_date <= end:
+            matches.append(t)
+    return matches
+
+
+def describe_events_in_timeframe(message: str, tickets: list[dict]) -> str:
+    result = _timeframe_range(message)
+    label = result[2] if result else "that time"
+    if not tickets:
+        return f"There are no events scheduled {label}."
+    names = ", ".join(t["event"] for t in tickets)
+    return f"Events {label}: {names}."
 
 
 def _has_least_signal(text_lower: str) -> bool:

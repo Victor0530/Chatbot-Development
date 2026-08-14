@@ -13,6 +13,11 @@ _REQUIRED_NLTK_DATA = [
     ("corpora/stopwords", "stopwords"),
     ("corpora/wordnet", "wordnet"),
     ("corpora/omw-1.4", "omw-1.4"),
+    # POS tagger - used by chatbot.py's resolve_intent() to tell a definite
+    # singular reference ("the event") apart from an indefinite/plural one
+    # ("any events"), a distinction the TF-IDF bag-of-words can't see because
+    # "the"/"any"/"this" are stripped as stopwords before vectorizing.
+    ("taggers/averaged_perceptron_tagger_eng", "averaged_perceptron_tagger_eng"),
 ]
 
 
@@ -31,8 +36,17 @@ _lemmatizer = WordNetLemmatizer()
 # "what", "why", "who", "which"). For intent classification, these are exactly the
 # signal that distinguishes e.g. "when is the event" (schedule) from "where is the
 # event" (location) — stripping them collapses both down to just "event". Keep them.
+#
+# Same reasoning for "on"/"up"/"all": stripping them collapsed "what's on" and
+# "what's up" down to the identical bag-of-words "what" (confirmed via
+# cross-validation - both then had to compete with bot_capabilities' own "what"-only
+# patterns for the same single-token vector), and "that's all"/"that will be all"
+# down to nothing at all (every other token in both is itself a stopword). Keeping
+# these three restores the signal without a measurable cost elsewhere: 5-fold CV
+# accuracy/f1_macro both improved (0.901/0.897 -> 0.920/0.915) rather than dropping.
 _stopwords = set(stopwords.words("english")) - {
     "when", "where", "how", "what", "why", "who", "which",
+    "on", "up", "all",
 }
 _punctuation = set(string.punctuation)
 

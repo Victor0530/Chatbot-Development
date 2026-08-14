@@ -53,7 +53,10 @@ def main():
     joblib.dump(label_encoder, MODELS_DIR / "label_encoder.joblib")
 
     def build_model():
-        return CalibratedClassifierCV(LinearSVC(), ensemble=False)
+        # random_state pins LinearSVC's dual-solver shuffling so re-running this
+        # script reproduces the same decision boundary instead of silently
+        # flipping borderline single-token examples (e.g. "hiya") between runs.
+        return CalibratedClassifierCV(LinearSVC(random_state=42), ensemble=False)
 
     model = build_model()
     model.fit(X_train, y_train)
