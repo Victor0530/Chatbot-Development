@@ -51,3 +51,14 @@ This project is fully containerized using Docker. This ensures that the environm
 - **Dependencies:** All dependencies are managed within the respective `Dockerfile`s and `requirements.txt` files in each service directory (`backend/`, `frontend/`, `rasa-chatbot/`).
 - **Rasa & Actions:** Any changes to dialogue flow (stories/rules/forms) require retraining the Rasa model (`rasa train`). Changes to custom action or validation logic require restarting the `actions` container (`docker compose restart actions`).
 
+## Dialogflow Bot Setup (Member 3)
+
+The Dialogflow bot needs a couple of things beyond `MONGO_URI` before it will respond, all configured in `backend/.env` (see `backend/.env.example`):
+
+- `DIALOGFLOW_PROJECT_ID` — the GCP project ID of the Dialogflow ES agent.
+- `GOOGLE_APPLICATION_CREDENTIALS` — path to a GCP service account key JSON file (resolved relative to `backend/` if not absolute).
+  - The service account needs the **Dialogflow API Admin** role on the project.
+  - Download the key file from the GCP console and place it locally (e.g. `backend/secret/your-key.json`) — **never commit it**. `backend/secret/` and `*-service-account*.json` are already in `.gitignore`.
+
+Without both of these set, chatting with the `dialogflow` bot in the frontend will return a "Sorry, something went wrong." response instead of a real reply.
+

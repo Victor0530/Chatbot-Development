@@ -24,16 +24,25 @@ def handle_dialogflow_message(session_id: str, message: str):
 
     if intent == "affirm":
         params = extract_slot_params(query_result)
-        if params.get("event_name") and params.get("ticket_quantity"):
-            bookings_col = get_collection("bookings")
-            bookings_col.insert_one({
-                "session_id": session_id,
-                "event_name": params["event_name"],
-                "ticket_quantity": params["ticket_quantity"],
-                "timeframe": params["timeframe"],
-                "status": "confirmed",
-                "created_at": datetime.utcnow().isoformat()
-            })
+        event_name = params.get("event_name")
+        quantity = params.get("ticket_quantity")
+        if event_name and quantity:
+            tickets_col = get_collection("tickets")
+            ticket = tickets_col.find_one({"event": {"$regex": event_name, "$options": "i"}})
+            if not ticket or ticket.get("available", 0) < quantity:
+                available = ticket.get("available", 0) if ticket else 0
+                response_text = f"Sorry, only {available} tickets left for {event_name}. Booking not confirmed."
+            else:
+                bookings_col = get_collection("bookings")
+                bookings_col.insert_one({
+                    "session_id": session_id,
+                    "event_name": params["event_name"],
+                    "ticket_quantity": quantity,
+                    "timeframe": params["timeframe"],
+                    "status": "confirmed",
+                    "created_at": datetime.utcnow().isoformat()
+                })
+                tickets_col.update_one({"_id": ticket["_id"]}, {"$inc": {"available": -quantity}})
     elif intent.lower() == "query_events":
         query_params = extract_query_params(query_result)
         category = query_params.get("category")

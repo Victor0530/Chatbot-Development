@@ -67,17 +67,22 @@ To ensure seamless side-by-side comparison across all 3 chatbot approaches (Rasa
 ### Standardized Intents
 | Intent Name | Description / User Goal | Example Utterances | Rasa Equivalent | NLP Equivalent | Dialogflow Equivalent |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| `greet` | User greets the bot | "Hi", "Hello", "Hey there" | `greet` | `greeting` | |
-| `goodbye` | User ends conversation | "Bye", "See you", "Goodbye" | `goodbye` | `goodbye` | |
-| `start_booking` | User initiates ticket purchase | "I want to buy tickets", "Book a show", "Get tickets" | `start_booking` | `book_ticket` | |
-| `inform` (or `inform_slot`) | User provides requested details (event name, quantity) | "Concert A", "3 tickets", "Pop Night" | `inform` | *(no classifier intent — handled contextually as a slot answer while a booking/lookup session is active)* | |
-| `query_events` | User asks about available events or schedule | "What events do you have?", "Any concerts this weekend?" | `query_events` | `list_events` | |
-| `affirm` | User confirms booking | "Yes", "Sure", "Confirm" | `confirm_booking` | *(no classifier intent — matched via affirmative-prefix text match during an active booking confirmation)* | |
-| `deny` | User cancels or aborts booking | "No", "Cancel", "Nevermind" | `cancel_booking` | *(no classifier intent — matched via negative/cancel-word text match during an active session)* | |
+| `greet` | User greets the bot | "Hi", "Hello", "Hey there" | `greet` | `greeting` | `greet` |
+| `goodbye` | User ends conversation | "Bye", "See you", "Goodbye" | `goodbye` | `goodbye` | `Goodbye` |
+| `start_booking` | User initiates ticket purchase | "I want to buy tickets", "Book a show", "Get tickets" | `start_booking` | `book_ticket` | `start_booking` |
+| `inform` (or `inform_slot`) | User provides requested details (event name, quantity) | "Concert A", "3 tickets", "Pop Night" | `inform` | *(no classifier intent — handled contextually as a slot answer while a booking/lookup session is active)* | `inform` |
+| `query_events` | User asks about available events or schedule | "What events do you have?", "Any concerts this weekend?" | `query_events` | `list_events` | `Query_events` |
+| `affirm` | User confirms booking | "Yes", "Sure", "Confirm" | `confirm_booking` | *(no classifier intent — matched via affirmative-prefix text match during an active booking confirmation)* | `affirm` |
+| `deny` | User cancels or aborts booking | "No", "Cancel", "Nevermind" | `cancel_booking` | *(no classifier intent — matched via negative/cancel-word text match during an active session)* | `deny` |
 | `change_event` | User wants a different event mid-booking | "Change event", "Pick another event" | `change_event` | *(no classifier intent — detected by re-matching a different known event name mid-**booking** session only; a lookup session just re-answers as a plain `inform`)* | |
 | `inform_ticket_query` | User asks for ticket/event information | "Check prices for tickets", "I need event information" | `inform_ticket_query` | `check_price` / `event_schedule` / `event_location` *(split into 3)* | |
+| `cancel_booking` *(Dialogflow-only)* | User asks to cancel an in-progress booking | "cancel this", "I changed my mind", "I don't want it anymore" | | | `cancel_booking` |
+| `confirm_cancel_yes` *(Dialogflow-only)* | User confirms the cancel request | "yes cancel it", "correct" | | | `confirm_cancel_yes` |
+| `confirm_cancel_no` *(Dialogflow-only)* | User backs out of cancelling | "no I still want it", "keep the booking" | | | `confirm_cancel_no` |
 
 **NLP note:** the classifier has 10 trained intents against the 9 standardized ones — 3 extra exist outside the contract: `bot_capabilities`, `thanks`, `cancel_ticket`.
+
+**Dialogflow note:** `change_event` and `inform_ticket_query` don't have a Dialogflow intent yet (left blank above). The agent has 3 extra intents outside the contract (added as rows above) to support a cancel-confirmation sub-flow, plus Dialogflow's built-in `Default Welcome Intent` / `Default Fallback Intent` (not listed, not project-specific).
 
 ### Standardized Entities
 | Entity Name | Description | Expected Values / Types |
