@@ -7,7 +7,7 @@ sys.path.insert(0, _THIS_DIR)
 sys.path.insert(0, os.path.dirname(_THIS_DIR))
 
 from database import get_collection
-from dialogflow_client import detect_intent, extract_slot_params, extract_query_params
+from dialogflow_client import detect_intent, extract_slot_params, extract_query_params, extract_ticket_query_params
 
 
 def handle_dialogflow_message(session_id: str, message: str):
@@ -68,5 +68,20 @@ def handle_dialogflow_message(session_id: str, message: str):
             response_text = "Here are some events you might like:\n" + "\n".join(lines)
         else:
             response_text = "Sorry, I couldn't find any events matching that. Want to see everything we have?"
+    elif intent == "inform_ticket_query":
+        ticket_params = extract_ticket_query_params(query_result)
+        event_name = ticket_params.get("event_name")
+        ticket = None
+        if event_name:
+            tickets_col = get_collection("tickets")
+            ticket = tickets_col.find_one({"event": {"$regex": event_name, "$options": "i"}})
+
+        if ticket:
+            response_text = (
+                f"{ticket.get('event')} is on {ticket.get('date')} at {ticket.get('venue')}, "
+                f"priced at RM{ticket.get('price')}, with {ticket.get('available')} tickets available."
+            )
+        else:
+            response_text = "Sorry, I couldn't find info on that event."
 
     return response_text, intent, confidence

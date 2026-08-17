@@ -62,3 +62,11 @@ def extract_query_params(query_result) -> dict:
         "category": _normalize_value(params_dict.get("category")),
         "timeframe": _normalize_value(params_dict.get("timeframe")),
     }
+
+
+def extract_ticket_query_params(query_result) -> dict:
+    result_dict = MessageToDict(query_result._pb)
+    params_dict = result_dict.get("parameters", {})
+    return {
+        "event_name": _normalize_value(params_dict.get("event_name")),
+    }

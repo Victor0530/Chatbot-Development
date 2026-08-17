@@ -74,15 +74,22 @@ To ensure seamless side-by-side comparison across all 3 chatbot approaches (Rasa
 | `query_events` | User asks about available events or schedule | "What events do you have?", "Any concerts this weekend?" | `query_events` | `list_events` | `Query_events` |
 | `affirm` | User confirms booking | "Yes", "Sure", "Confirm" | `confirm_booking` | *(no classifier intent — matched via affirmative-prefix text match during an active booking confirmation)* | `affirm` |
 | `deny` | User cancels or aborts booking | "No", "Cancel", "Nevermind" | `cancel_booking` | *(no classifier intent — matched via negative/cancel-word text match during an active session)* | `deny` |
-| `change_event` | User wants a different event mid-booking | "Change event", "Pick another event" | `change_event` | *(no classifier intent — detected by re-matching a different known event name mid-**booking** session only; a lookup session just re-answers as a plain `inform`)* | |
-| `inform_ticket_query` | User asks for ticket/event information | "Check prices for tickets", "I need event information" | `inform_ticket_query` | `check_price` / `event_schedule` / `event_location` *(split into 3)* | |
+| `change_event` | User wants a different event mid-booking | "Change event", "Pick another event" | `change_event` | *(no classifier intent — detected by re-matching a different known event name mid-**booking** session only; a lookup session just re-answers as a plain `inform`)* | change_event (see note below for the quantity-stage variant) |
+| `inform_ticket_query` | User asks for ticket/event information | "Check prices for tickets", "I need event information" | `inform_ticket_query` | `check_price` / `event_schedule` / `event_location` *(split into 3)* | `inform_ticket_query` |
 | `cancel_booking` *(Dialogflow-only)* | User asks to cancel an in-progress booking | "cancel this", "I changed my mind", "I don't want it anymore" | | | `cancel_booking` |
 | `confirm_cancel_yes` *(Dialogflow-only)* | User confirms the cancel request | "yes cancel it", "correct" | | | `confirm_cancel_yes` |
 | `confirm_cancel_no` *(Dialogflow-only)* | User backs out of cancelling | "no I still want it", "keep the booking" | | | `confirm_cancel_no` |
 
 **NLP note:** the classifier has 10 trained intents against the 9 standardized ones — 3 extra exist outside the contract: `bot_capabilities`, `thanks`, `cancel_ticket`.
 
-**Dialogflow note:** `change_event` and `inform_ticket_query` don't have a Dialogflow intent yet (left blank above). The agent has 3 extra intents outside the contract (added as rows above) to support a cancel-confirmation sub-flow, plus Dialogflow's built-in `Default Welcome Intent` / `Default Fallback Intent` (not listed, not project-specific).
+**Dialogflow note:** Dialogflow's built-in multi-turn slot filling doesn't handle being interrupted mid-flow reliably (a platform limitation, not a design choice), so the booking flow is built as a small state machine using several helper intents instead of one big start_booking intent. Same 9 capabilities as the contract — just split across more intents under the hood. Quick map if you want to trace the logic:
+
+- Bot asks which event → `start_booking` (opens) → `provide_event_name` (captures the answer)
+- Bot asks quantity → `provide_quantity` (captures the answer)
+- Bot didn't understand the reply → `start_booking - fallback` / `provide_event_name - fallback` (re-asks, doesn't count as a new capability)
+- User wants to switch events mid-booking → `change_event` (at the final confirm step) / `change_event_at_quantity` (while quantity is being asked) — both are the same `change_event` capability, just two versions for two different points in the flow
+- User says "cancel" at any point → `cancel_booking` → then `confirm_cancel_yes` / `confirm_cancel_no` (double-checks before actually cancelling)
+- User says "no" specifically when asked "shall I confirm this booking?" → `deny` (answers directly, no double-check needed since it's already a direct question)
 
 ### Standardized Entities
 | Entity Name | Description | Expected Values / Types |
