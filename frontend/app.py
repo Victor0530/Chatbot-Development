@@ -9,7 +9,7 @@ import uuid
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://localhost:8000")
 
 st.set_page_config(
-    page_title="CompareNLU — Ticket Chatbots Dashboard",
+    page_title="Online Ticketing Chatbot Dashboard",
     page_icon="🎟️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -315,7 +315,7 @@ with col2:
     st.markdown(f"### 💬 Chat with {bot_choice} Bot")
     
     # Scrollable chat history container (tall enough to show plenty of history)
-    chat_container = st.container(height=600)
+    chat_container = st.container(height=500)
     
     with chat_container:
         for msg in st.session_state["messages"]:

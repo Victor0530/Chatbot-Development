@@ -22,6 +22,10 @@ nlu:
       - i need to buy tickets
       - start booking
       - book tickets
+      - i want to book [Concert A](event_name)
+      - book me [Concert B](event_name)
+      - can i book [Concert C](event_name)
+      - i want to book tickets for [Concert A](event_name)
 
   - intent: query_events
     examples: |
@@ -46,6 +50,20 @@ nlu:
       - which event has the most available seats?
       - which event has the least available seats?
       - find events at [Arena Green](venue) on [2026-06-15](date)
+      - where is [Concert B](event_name)?
+      - where is [Concert A](event_name) located?
+      - where can i find [Concert A](event_name)?
+      - what is the price of [Concert B](event_name)?
+      - how much for [Concert B](event_name)?
+      - how much are tickets for [Concert A](event_name)?
+      - what time is [Concert A](event_name)?
+      - when is [Concert B](event_name)?
+      - tell me about [Concert A](event_name)
+      - give me details about [Concert B](event_name)
+      - show me [Concert B](event_name) details
+      - [Concert B](event_name) location
+      - what venue is [Concert A](event_name) at?
+      - which venue hosts [Concert B](event_name)?
 
   - intent: inform_ticket_query
     examples: |
